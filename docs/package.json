@@ -1,0 +1,7 @@
+{
+  "name": "site-sentinel-docs",
+  "private": true,
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}
