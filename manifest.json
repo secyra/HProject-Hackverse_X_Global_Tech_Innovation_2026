@@ -27,9 +27,7 @@
   "permissions": [
     "tabs",
     "storage",
-    "webRequest",
-    "downloads",
-    "notifications"
+    "webRequest"
   ],
   "host_permissions": [
     "*://*/*"

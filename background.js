@@ -22,47 +22,6 @@ const LOW_CRED_TLDS = [
 ];
 
 // Download Protection
-const DANGEROUS_EXTS = {
-  executables: { exe:6, msi:6, scr:6, bat:6, cmd:6, vbs:6, ps1:6, psm1:6, psd1:6, jar:6, com:6, pif:6, gadget:6, application:6 },
-  scripts: { js:5, jse:5, vbe:5, wsf:5, wsh:5, hta:5, cpl:5, reg:5 },
-  archives: { zip:3, rar:3, '7z':3, iso:3, cab:3, img:3 },
-  macros: { docm:4, xlsm:4, pptm:4 }
-};
-function getExtRisk(ext) {
-  for (const group of Object.values(DANGEROUS_EXTS)) {
-    if (ext in group) return group[ext];
-  }
-  return 0;
-}
-
-let downloadStats = { totalBlocked: 0, totalWarned: 0, recentBlocks: [] };
-
-function checkDownloadRisk(item) {
-  let score = 0;
-  let reasons = [];
-  try {
-    const filename = item.filename || item.suggestedFilename || '';
-    const ext = filename.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
-    const extRisk = getExtRisk(ext);
-    if (extRisk > 0) { score += extRisk; reasons.push('Extension .' + ext + ' (risk ' + extRisk + ')'); }
-    const url = item.url || '';
-    if (url) {
-      const urlObj = new URL(url);
-      const host = urlObj.hostname.toLowerCase();
-      const tld = host.split('.').pop();
-      if (LOW_CRED_TLDS.includes(tld)) { score += 4; reasons.push('Low-cred TLD: .' + tld); }
-      if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) { score += 3; reasons.push('IP-based host'); }
-      for (const pattern of PHISHING_URL_PATTERNS) {
-        if (pattern.test(host) || pattern.test(url.toLowerCase())) { score += 5; reasons.push('Matches phishing pattern'); break; }
-      }
-    }
-    const name = filename.toLowerCase().replace(/\.[^.]+$/, '');
-    if (/^[a-z0-9]{16,}$/.test(name)) { score += 4; reasons.push('Randomized filename'); }
-    const dotCount = (filename.match(/\./g) || []).length;
-    if (dotCount >= 2 && ext !== 'txt' && ext !== 'pdf' && ext !== 'jpg' && ext !== 'png') { score += 4; reasons.push('Double extension'); }
-  } catch (e) {}
-  return { score, reasons };
-}
 
 function getMainDomain(hostname) {
   const parts = hostname.split('.');
@@ -76,7 +35,7 @@ function getMainDomain(hostname) {
 function loadSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['sitesentinel_settings'], (result) => {
-      const defaults = { realtime: true, email: true, notifications: false, dataCollection: true, whitelist: [], downloadProtection: true };
+      const defaults = { realtime: true, email: true, whitelist: [] };
       resolve({ ...defaults, ...result.sitesentinel_settings });
     });
   });
@@ -85,6 +44,34 @@ function loadSettings() {
 function isWhitelisted(domain, settings) {
   const whitelist = settings.whitelist || [];
   return whitelist.some(w => domain === w || domain.endsWith('.' + w));
+}
+
+function checkAndWarn(tabId, url) {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+  loadSettings().then(settings => {
+    if (settings.realtime === false) return;
+    try {
+      const domain = new URL(url).hostname;
+      if (isWhitelisted(domain, settings)) return;
+      chrome.storage.session.get(['silencedUrls'], (result) => {
+        const silenced = result.silencedUrls || {};
+        const origin = (() => { try { return new URL(url).origin; } catch (_) { return null; } })();
+        const isSilenced = origin && Object.keys(silenced).some(silencedUrl => {
+          try { return new URL(silencedUrl).origin === origin; } catch (_) { return false; }
+        });
+        if (isSilenced) return;
+        const riskResult = checkUrlPhishingRisk(url);
+        if (riskResult.risk !== 'none') {
+          chrome.tabs.update(tabId, {
+            url: chrome.runtime.getURL('warning.html') +
+              '?target=' + encodeURIComponent(url) +
+              '&risk=' + riskResult.risk +
+              '&reason=' + encodeURIComponent(riskResult.reason)
+          }, () => {});
+        }
+      });
+    } catch (e) {}
+  });
 }
 
 function checkUrlPhishingRisk(url) {
@@ -182,6 +169,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       analyticsScripts: 0,
       adScripts: 0
     };
+
+    if (tab.url && !tab.url.startsWith('chrome-extension://')) {
+      checkAndWarn(tabId, tab.url);
+    }
   }
 
   if (changeInfo.status === 'complete' && tab.url) {
@@ -261,10 +252,7 @@ chrome.runtime.onInstalled.addListener(() => {
         sitesentinel_settings: {
           realtime: true,
           email: true,
-          notifications: false,
-          dataCollection: true,
           whitelist: [],
-          downloadProtection: true
         }
       });
     }
@@ -325,6 +313,36 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.action === 'silence_url_warning') {
+    chrome.storage.session.get(['silencedUrls'], (result) => {
+      const silenced = result.silencedUrls || {};
+      silenced[msg.url] = Date.now();
+      if (msg.dontWarn && msg.domain) {
+        chrome.storage.local.get(['sitesentinel_settings'], (settingsResult) => {
+          const settings = settingsResult.sitesentinel_settings || {};
+          settings.whitelist = settings.whitelist || [];
+          if (!settings.whitelist.includes(msg.domain)) {
+            settings.whitelist.push(msg.domain);
+            chrome.storage.local.set({ sitesentinel_settings: settings }, () => {
+              chrome.storage.session.set({ silencedUrls: silenced }, () => {
+                sendResponse({ ok: true });
+              });
+            });
+          } else {
+            chrome.storage.session.set({ silencedUrls: silenced }, () => {
+              sendResponse({ ok: true });
+            });
+          }
+        });
+      } else {
+        chrome.storage.session.set({ silencedUrls: silenced }, () => {
+          sendResponse({ ok: true });
+        });
+      }
+    });
+    return true;
+  }
+
   if (msg.action === 'set_badge') {
     chrome.action.setBadgeText({ tabId: msg.tabId, text: msg.text || '' });
     if (msg.color) {
@@ -334,21 +352,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  if (msg.action === 'get_download_protection_stats') {
-    sendResponse({ stats: downloadStats });
-    return true;
-  }
-
-  if (msg.action === 'set_download_protection') {
-    chrome.storage.local.get(['sitesentinel_settings'], (result) => {
-      const settings = result.sitesentinel_settings || {};
-      settings.downloadProtection = msg.enabled;
-      chrome.storage.local.set({ sitesentinel_settings: settings }, () => {
-        sendResponse({ ok: true });
-      });
-    });
-    return true;
-  }
 });
 
 // Keyboard shortcut: Ctrl+Shift+S to scan
@@ -362,77 +365,4 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-// Download Protection: intercept and scan file downloads
-chrome.downloads.onCreated.addListener((downloadItem) => {
-  chrome.storage.local.get(['sitesentinel_settings'], (result) => {
-    const settings = result.sitesentinel_settings || {};
-    if (settings.downloadProtection === false) return;
-    if (!downloadItem || downloadItem.id == null) return;
-    if (downloadItem.url && downloadItem.url.startsWith('blob:')) {
-      // blob: URLs can still carry malware via "Save As" — check filename extension only
-      const blobCheck = checkDownloadRisk(downloadItem);
-      if (blobCheck.score >= 8) {
-        chrome.downloads.cancel(downloadItem.id, () => {
-          if (!chrome.runtime.lastError) {
-            downloadStats.totalBlocked++;
-            downloadStats.recentBlocks.unshift({
-              url: downloadItem.url,
-              filename: downloadItem.filename || 'unknown',
-              score: blobCheck.score,
-              reasons: blobCheck.reasons,
-              time: Date.now()
-            });
-            if (downloadStats.recentBlocks.length > 20) downloadStats.recentBlocks.pop();
-            try { var d2 = new URL(downloadItem.url).hostname; } catch(e) { var d2 = 'unknown'; }
-            chrome.notifications.create({
-              type: 'basic',
-              iconUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'),
-              title: 'Download Blocked',
-              message: 'Site Sentinel blocked a risky blob download (' + blobCheck.reasons.slice(0, 2).join(', ') + ')',
-              priority: 2
-            });
-          }
-        });
-      }
-      return;
-    }
 
-    const result2 = checkDownloadRisk(downloadItem);
-    const score = result2.score;
-    const reasons = result2.reasons;
-
-    if (score >= 8) {
-      chrome.downloads.cancel(downloadItem.id, () => {
-        if (!chrome.runtime.lastError) {
-          downloadStats.totalBlocked++;
-          downloadStats.recentBlocks.unshift({
-            url: downloadItem.url,
-            filename: downloadItem.filename || 'unknown',
-            score: score,
-            reasons: reasons,
-            time: Date.now()
-          });
-          if (downloadStats.recentBlocks.length > 20) downloadStats.recentBlocks.pop();
-          const domain = (() => { try { return new URL(downloadItem.url).hostname; } catch (e) { return 'unknown'; } })();
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'),
-            title: 'Download Blocked',
-            message: 'Site Sentinel blocked a risky download from ' + domain + ' (' + reasons.slice(0, 2).join(', ') + ')',
-            priority: 2
-          });
-        }
-      });
-    } else if (score >= 5) {
-      downloadStats.totalWarned++;
-      const domain = (() => { try { return new URL(downloadItem.url).hostname; } catch (e) { return 'unknown'; } })();
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'),
-        title: 'Suspicious Download',
-        message: 'Site Sentinel detected a suspicious file from ' + domain + ' (' + reasons.slice(0, 2).join(', ') + ')',
-        priority: 1
-      });
-    }
-  });
-});
