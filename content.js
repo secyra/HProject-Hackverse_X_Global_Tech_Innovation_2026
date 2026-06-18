@@ -20,98 +20,6 @@ function getUrlPurpose(url) {
   return 'other';
 }
 
-const SUSPICIOUS_KEYWORDS = [
-  { kw: "verify your account", category: "phishing", severity: 9 },
-  { kw: "verify your identity", category: "phishing", severity: 9 },
-  { kw: "confirm your account", category: "phishing", severity: 8 },
-  { kw: "confirm your identity", category: "phishing", severity: 9 },
-  { kw: "account verification required", category: "phishing", severity: 8 },
-  { kw: "sign in to verify", category: "phishing", severity: 7 },
-  { kw: "your account has been locked", category: "phishing", severity: 9 },
-  { kw: "your account has been suspended", category: "phishing", severity: 9 },
-  { kw: "your account has been compromised", category: "phishing", severity: 10 },
-  { kw: "your account will be closed", category: "phishing", severity: 8 },
-  { kw: "your account will be terminated", category: "phishing", severity: 8 },
-  { kw: "suspension notice", category: "phishing", severity: 8 },
-  { kw: "account disabled", category: "phishing", severity: 8 },
-  { kw: "reactivate your account", category: "phishing", severity: 7 },
-
-  { kw: "urgent action required", category: "urgency", severity: 9 },
-  { kw: "urgent security notice", category: "urgency", severity: 9 },
-  { kw: "immediate action required", category: "urgency", severity: 8 },
-  { kw: "response required within", category: "urgency", severity: 7 },
-  { kw: "act now", category: "urgency", severity: 5 },
-  { kw: "act immediately", category: "urgency", severity: 6 },
-  { kw: "do not delay", category: "urgency", severity: 5 },
-  { kw: "limited time", category: "urgency", severity: 4 },
-  { kw: "expires today", category: "urgency", severity: 5 },
-  { kw: "offer expires", category: "urgency", severity: 4 },
-  { kw: "last chance", category: "urgency", severity: 4 },
-
-  { kw: "update password", category: "credential_theft", severity: 8 },
-  { kw: "change your password", category: "credential_theft", severity: 7 },
-  { kw: "reset your password", category: "credential_theft", severity: 7 },
-  { kw: "password expired", category: "credential_theft", severity: 7 },
-  { kw: "re-enter your password", category: "credential_theft", severity: 7 },
-  { kw: "your password has expired", category: "credential_theft", severity: 7 },
-  { kw: "update billing information", category: "credential_theft", severity: 8 },
-  { kw: "confirm your password", category: "credential_theft", severity: 7 },
-  { kw: "enter your login", category: "credential_theft", severity: 6 },
-
-  { kw: "security alert", category: "social_engineering", severity: 8 },
-  { kw: "security notification", category: "social_engineering", severity: 6 },
-  { kw: "unusual sign-in attempt", category: "social_engineering", severity: 9 },
-  { kw: "suspicious activity detected", category: "social_engineering", severity: 9 },
-  { kw: "someone tried to access", category: "social_engineering", severity: 9 },
-  { kw: "new device detected", category: "social_engineering", severity: 7 },
-  { kw: "unusual login detected", category: "social_engineering", severity: 9 },
-  { kw: "new login from", category: "social_engineering", severity: 7 },
-  { kw: "we detected unusual activity", category: "social_engineering", severity: 8 },
-
-  { kw: "congratulations you won", category: "scam", severity: 8 },
-  { kw: "you have been selected", category: "scam", severity: 7 },
-  { kw: "you are a winner", category: "scam", severity: 8 },
-  { kw: "claim your prize", category: "scam", severity: 8 },
-  { kw: "claim your reward", category: "scam", severity: 7 },
-  { kw: "gift card winner", category: "scam", severity: 9 },
-  { kw: "you won a prize", category: "scam", severity: 8 },
-  { kw: "lottery winner", category: "scam", severity: 9 },
-  { kw: "exclusive deal", category: "scam", severity: 4 },
-  { kw: "risk of closure", category: "scam", severity: 7 },
-  { kw: "limited offer", category: "scam", severity: 3 },
-
-  { kw: "exclusive opportunity", category: "scam", severity: 5 },
-  { kw: "free gift", category: "scam", severity: 4 },
-  { kw: "cash reward", category: "scam", severity: 7 },
-  { kw: "inheritance", category: "scam", severity: 9 },
-  { kw: "wire transfer", category: "scam", severity: 8 },
-  { kw: "western union", category: "scam", severity: 8 },
-  { kw: "money gram", category: "scam", severity: 8 },
-  { kw: "bank transfer", category: "scam", severity: 5 },
-
-  { kw: "malware detected", category: "malware", severity: 10 },
-  { kw: "virus detected", category: "malware", severity: 10 },
-  { kw: "your computer is infected", category: "malware", severity: 10 },
-  { kw: "your system is compromised", category: "malware", severity: 10 },
-  { kw: "scan your computer", category: "malware", severity: 8 },
-  { kw: "remove virus", category: "malware", severity: 8 },
-  { kw: "click here to remove", category: "malware", severity: 8 },
-  { kw: "install security tool", category: "malware", severity: 7 },
-  { kw: "dangerous virus", category: "malware", severity: 9 },
-  { kw: "immediate security scan", category: "malware", severity: 8 },
-
-  { kw: "billing update", category: "financial", severity: 6 },
-  { kw: "payment failed", category: "financial", severity: 7 },
-  { kw: "payment declined", category: "financial", severity: 7 },
-  { kw: "credit card declined", category: "financial", severity: 8 },
-  { kw: "refund available", category: "financial", severity: 5 },
-  { kw: "tax refund", category: "financial", severity: 7 },
-  { kw: "unusual transaction", category: "financial", severity: 8 },
-  { kw: "unauthorized transaction", category: "financial", severity: 9 },
-  { kw: "fraud alert", category: "financial", severity: 9 },
-  { kw: "bank account update", category: "financial", severity: 7 }
-];
-
 const SUSPICIOUS_DOMAIN_PATTERNS = [
   /login.*\.(?:xyz|top|club|gq|ml|tk|cf|ga|work|review|life|live|online|site|website|space|press|host|stream|download|bid|trade|webcam|science|party|racing|win|date|men|loan|click|faith|moe)/i,
   /secure.*\.(?:xyz|top|club|gq|ml|tk|cf|ga)/i,
@@ -308,89 +216,117 @@ async function runAnalysis() {
   let dobFields = 0;
   let creditCardFields = 0;
   let fileUploadFields = 0;
+  let credentialFormFound = false;
+  let credentialFormSecure = true;
 
   inputs.forEach(input => {
+    const tagName = input.tagName.toLowerCase();
     const type = (input.getAttribute('type') || '').toLowerCase();
     const name = (input.getAttribute('name') || '').toLowerCase();
-    const id = (input.getAttribute('id') || '').toLowerCase();
+    const iid = (input.getAttribute('id') || '').toLowerCase();
     const placeholder = (input.getAttribute('placeholder') || '').toLowerCase();
     const autocomplete = (input.getAttribute('autocomplete') || '').toLowerCase();
     const ariaLabel = (input.getAttribute('aria-label') || '').toLowerCase();
+    const inputmode = (input.getAttribute('inputmode') || '').toLowerCase();
+    const maxlength = parseInt(input.getAttribute('maxlength') || '0');
 
-    const matchText = `${name} ${id} ${placeholder} ${autocomplete} ${ariaLabel}`;
+    // Read associated label text (framework-proof — browser resolves labels natively)
+    let labelText = '';
+    const labels = input.labels || [];
+    for (const lbl of labels) {
+      labelText += ' ' + (lbl.textContent || '').toLowerCase();
+    }
+
+    // Walk up DOM for nearest heading/legend context
+    let headingText = '';
+    let el = input.parentElement;
+    let depth = 0;
+    while (el && el !== document.body && depth < 6) {
+      const heading = el.querySelector(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6, :scope > legend');
+      if (heading) { headingText = (heading.textContent || '').toLowerCase(); break; }
+      el = el.parentElement;
+      depth++;
+    }
+
+    // Submit button text from parent form
+    let submitText = '';
+    const parentForm = input.closest('form');
+    if (parentForm) {
+      const submitBtn = parentForm.querySelector('button[type="submit"], input[type="submit"]');
+      if (submitBtn) {
+        submitText = (submitBtn.textContent || submitBtn.value || '').toLowerCase();
+      }
+    }
+
+    // Prioritize autocomplete, label text, and inputmode over name/id
+    const matchText = `${autocomplete} ${labelText} ${headingText} ${submitText} ${inputmode} ${ariaLabel} ${placeholder} ${name} ${iid}`;
 
     if (type === 'file') {
       fileUploadFields++;
       return;
     }
 
+    // Credit card: autocomplete values, type, keywords, or inputmode+numeric+maxlength heuristic
     if (
-      matchText.includes('card') || 
-      matchText.includes('cc') || 
-      matchText.includes('cvv') || 
-      matchText.includes('cvc') || 
-      matchText.includes('expiry') ||
-      type === 'cc-number'
+      autocomplete === 'cc-number' || autocomplete === 'cc-name' ||
+      autocomplete === 'cc-exp' || autocomplete === 'cc-csc' ||
+      type === 'cc-number' ||
+      /\b(card|cc|cvv|cvc|expiry|credit.?card)\b/.test(matchText) ||
+      (inputmode === 'numeric' && maxlength >= 13 && maxlength <= 19)
     ) {
       creditCardFields++;
       return;
     }
 
-    if (type === 'email' || matchText.includes('email') || matchText.includes('mail')) {
+    // Email
+    if (type === 'email' || autocomplete === 'email' || inputmode === 'email' || /\b(email|e-mail)\b/.test(matchText)) {
       emailFields++;
       return;
     }
 
-    if (type === 'tel' || matchText.includes('phone') || matchText.includes('tel') || matchText.includes('mobile')) {
+    // Phone
+    if (type === 'tel' || autocomplete === 'tel' || inputmode === 'tel' || /\b(phone|mobile|cell|telephone|tel)\b/.test(matchText)) {
       phoneFields++;
       return;
     }
 
-    if (matchText.includes('dob') || matchText.includes('birth') || matchText.includes('bday')) {
+    // Date of birth
+    if (autocomplete === 'bday' || /\b(dob|birth|bday)\b/.test(matchText)) {
       dobFields++;
       return;
     }
 
+    // Address
     if (
-      matchText.includes('address') || 
-      matchText.includes('street') || 
-      matchText.includes('zip') || 
-      matchText.includes('postcode') || 
-      matchText.includes('city') || 
-      matchText.includes('state') || 
-      matchText.includes('country')
+      autocomplete.startsWith('address') || autocomplete === 'street-address' ||
+      autocomplete === 'postal-code' || autocomplete === 'country-name' ||
+      /\b(address|street|zip|postcode|postal|city|state|country)\b/.test(matchText)
     ) {
       addressFields++;
       return;
     }
 
+    // Name
     if (
-      matchText.includes('name') && 
-      !matchText.includes('username') && 
-      !matchText.includes('cardname')
+      autocomplete === 'name' || autocomplete === 'given-name' ||
+      autocomplete === 'family-name' || autocomplete === 'full-name' ||
+      (/\bname\b/.test(matchText) && !/\b(username|cardname)\b/.test(matchText))
     ) {
       nameFields++;
       return;
     }
-  });
 
-  const bodyText = document.body ? document.body.innerText.toLowerCase() : "";
-
-  const detectedKeywordEntries = [];
-  SUSPICIOUS_KEYWORDS.forEach(entry => {
-    if (bodyText.includes(entry.kw)) {
-      detectedKeywordEntries.push(entry);
+    // Detect credential form by password field, autocomplete, or submit button text
+    if (
+      type === 'password' ||
+      autocomplete === 'current-password' || autocomplete === 'new-password' ||
+      /sign in|log in|sign up|register|create account|pay now|checkout|continue/.test(submitText)
+    ) {
+      credentialFormFound = true;
+      if (!window.location.protocol.startsWith('https:')) {
+        credentialFormSecure = false;
+      }
     }
-  });
-
-  const detectedCategories = {};
-  detectedKeywordEntries.forEach(entry => {
-    if (!detectedCategories[entry.category]) {
-      detectedCategories[entry.category] = { count: 0, maxSeverity: 0, keywords: [] };
-    }
-    detectedCategories[entry.category].count++;
-    detectedCategories[entry.category].maxSeverity = Math.max(detectedCategories[entry.category].maxSeverity, entry.severity);
-    detectedCategories[entry.category].keywords.push(entry.kw);
   });
 
   const linkNodes = document.querySelectorAll('a[href]');
@@ -499,12 +435,11 @@ async function runAnalysis() {
     loginForms,
     paymentForms,
     passwordFields,
+    credentialFormFound,
+    credentialFormSecure,
     externalFormActions,
     suspiciousFormActions,
     formActionHosts,
-    detectedKeywords: detectedKeywordEntries.map(e => e.kw),
-    keywordCategories: detectedCategories,
-    keywordTotalSeverity: detectedKeywordEntries.reduce((sum, e) => sum + e.severity, 0),
     iframes,
     scriptCount: scripts,
     metaCount: metaTags,
@@ -543,8 +478,7 @@ async function runAnalysis() {
       hasXSSProtection: securityMeta.hasXSS
     },
     hiddenElements,
-    techStack,
-    threatCategories: Object.keys(detectedCategories)
+    techStack
   };
 }
 

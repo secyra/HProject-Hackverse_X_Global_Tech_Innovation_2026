@@ -25,7 +25,8 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no extr
   ],
   "trust_assessment": "<brief assessment of the site's trustworthiness signals>",
   "recommendation": "<clear one-sentence action for the user: e.g. 'Avoid entering any personal information on this site.'>",
-  "data_exposure_risk": "low" | "medium" | "high"
+  "data_exposure_risk": "low" | "medium" | "high",
+  "plain_english_briefing": "<exactly 3 plain-English sentences explaining what this site is doing, what it is collecting or trying to do, and a clear action for the user. Example: 'This site is pretending to be PayPal. It is collecting your password through a form that sends data to a different server. Do not enter any information.'>"
 }}
 
 Guidelines:

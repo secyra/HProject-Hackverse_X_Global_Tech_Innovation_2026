@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+    <title>Warning – Site Sentinel</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: #0f0f11;
+        color: #f1f1f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+      }
+      .container {
+        max-width: 520px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .shield-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        background: rgba(220,38,38,0.12);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+      }
+      .shield-icon svg { width: 32px; height: 32px; }
+
+      .risk-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+      }
+      .risk-badge.high { background: rgba(220,38,38,0.15); color: #ef4444; }
+      .risk-badge.medium { background: rgba(217,119,6,0.15); color: #f59e0b; }
+      .risk-badge.low { background: rgba(37,99,235,0.15); color: #60a5fa; }
+
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+        color: #fff;
+      }
+
+      #warning-domain {
+        color: #fbbf24;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        color: #9ca3af;
+        line-height: 1.5;
+        margin-bottom: 24px;
+      }
+
+      .reason-card {
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+      }
+      .reason-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        margin-bottom: 6px;
+      }
+      .reason-text {
+        font-size: 13px;
+        font-weight: 500;
+        color: #fca5a5;
+      }
+      .url-text {
+        font-size: 11px;
+        color: #9ca3af;
+        word-break: break-all;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #27272a;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .btn-primary {
+        width: 100%;
+        background: #18181b;
+        color: #fff;
+        border: 1px solid #3f3f46;
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.2s;
+      }
+      .btn-primary:hover { background: #27272a; }
+
+      .btn-danger {
+        width: 100%;
+        background: transparent;
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.3);
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.2s;
+      }
+      .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #9ca3af;
+      }
+      .checkbox-row input[type="checkbox"] {
+        accent-color: #2563eb;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+      }
+      .checkbox-row label { cursor: pointer; }
+
+      .footer-text {
+        margin-top: 20px;
+        font-size: 10px;
+        color: #52525b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="shield-icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+
+      <div class="risk-badge" id="risk-badge">HIGH</div>
+
+      <h1>Warning: <span id="warning-domain">--</span></h1>
+
+      <div class="subtitle">
+        Site Sentinel identified this website as potentially dangerous and blocked the page from loading.
+      </div>
+
+      <div class="reason-card">
+        <div class="reason-label">Why this was blocked</div>
+        <div class="reason-text" id="warning-reason">--</div>
+        <div class="url-text" id="warning-url">--</div>
+      </div>
+
+      <div class="actions">
+        <button id="btn-go-back" class="btn-primary">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Go Back to Safety
+        </button>
+
+        <button id="btn-proceed" class="btn-danger">
+          Proceed Anyway
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="checkbox-dont-warn">
+          <label for="checkbox-dont-warn">Don't warn again for this domain</label>
+        </div>
+      </div>
+
+      <div class="footer-text">
+        Site Sentinel v2.2 &bull; Real-time protection active
+      </div>
+    </div>
+
+    <script src="warning.js"></script>
+  </body>
+</html>

@@ -25,11 +25,7 @@
         --card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
       }
 
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
 
       body {
         width: 360px;
@@ -43,7 +39,6 @@
         position: relative;
       }
 
-      /* --- Header --- */
       .header {
         height: 52px;
         background-color: #ffffff;
@@ -62,13 +57,6 @@
         gap: 8px;
       }
 
-      .logo-shield {
-        color: var(--text-main);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
       .logo-text {
         font-size: 15px;
         font-weight: 700;
@@ -76,74 +64,20 @@
         color: var(--text-main);
       }
 
-      .header-right {
-        display: flex;
-        align-items: center;
-      }
-
-      .scan-pill-btn {
-        background-color: #111827;
-        color: #ffffff;
-        border: none;
-        border-radius: 20px;
-        padding: 5px 14px;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .scan-pill-btn:hover {
-        background-color: #1f2937;
-      }
-
-      .search-header-btn {
-        background: none;
-        border: none;
-        color: var(--text-sub);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      /* --- Scrollable Viewport --- */
       .content-viewport {
         flex: 1;
         overflow-y: auto;
         padding: 16px;
-        padding-bottom: 80px; /* Space for fixed footer */
+        padding-bottom: 80px;
       }
 
-      .content-viewport::-webkit-scrollbar {
-        width: 4px;
-      }
+      .content-viewport::-webkit-scrollbar { width: 4px; }
+      .content-viewport::-webkit-scrollbar-track { background: transparent; }
+      .content-viewport::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-      .content-viewport::-webkit-scrollbar-track {
-        background: transparent;
-      }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
 
-      .content-viewport::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-
-      /* --- Tab Management --- */
-      .tab-content {
-        display: none;
-        animation: tabFadeIn 0.25s ease-out;
-      }
-
-      .tab-content.active {
-        display: block;
-      }
-
-      @keyframes tabFadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      /* --- Cards --- */
       .card {
         background-color: #ffffff;
         border-radius: 12px;
@@ -162,31 +96,78 @@
         margin-bottom: 12px;
       }
 
-      /* --- Live Protection Header (Safe Dashboard) --- */
-      .live-protection-badge {
-        display: inline-flex;
+      .hidden { display: none !important; }
+
+      .landing-card {
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 6px;
-        font-size: 9px;
+        text-align: center;
+        padding: 32px 20px;
+      }
+
+      .landing-shield {
+        width: 56px;
+        height: 56px;
+        background: var(--blue-light);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: var(--blue-active);
+      }
+
+      .landing-title {
+        font-size: 18px;
         font-weight: 700;
-        color: var(--blue-text);
-        letter-spacing: 0.5px;
+        color: var(--text-main);
         margin-bottom: 4px;
       }
 
-      .live-protection-badge .dot {
-        width: 6px;
-        height: 6px;
-        background-color: var(--blue-active);
-        border-radius: 50%;
-        animation: pulse 2s infinite;
+      .landing-domain {
+        font-size: 12px;
+        color: var(--text-sub);
+        margin-bottom: 20px;
+        word-break: break-all;
       }
 
-      @keyframes pulse {
-        0% { transform: scale(0.9); opacity: 1; }
-        50% { transform: scale(1.2); opacity: 0.5; }
-        100% { transform: scale(0.9); opacity: 1; }
+      .scan-btn {
+        width: 100%;
+        background-color: #111827;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background-color 0.2s;
       }
+
+      .scan-btn:hover { background-color: #1f2937; }
+      .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .verdict-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .verdict-badge.safe { background: var(--blue-light); color: var(--blue-text); }
+      .verdict-badge.suspicious { background: var(--yellow-bg); color: var(--yellow-text); }
+      .verdict-badge.dangerous { background: var(--red-bg); color: var(--red-text); }
 
       .verdict-title {
         font-size: 20px;
@@ -194,11 +175,6 @@
         color: var(--text-main);
         line-height: 1.25;
         margin-bottom: 8px;
-        word-break: break-all;
-      }
-
-      .verdict-safe {
-        color: var(--blue-active);
       }
 
       .verdict-desc {
@@ -208,1100 +184,225 @@
         margin-bottom: 16px;
       }
 
-      .analyze-btn {
-        width: 100%;
-        background-color: var(--blue-active);
-        color: #ffffff;
-        border: none;
-        border-radius: 8px;
-        padding: 11px;
-        font-size: 12px;
-        font-weight: 600;
+      .score-row {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .analyze-btn:hover {
-        background-color: #1d4ed8;
-      }
-
-      .analyze-btn svg {
-        width: 16px;
-        height: 16px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 2.5;
-      }
-
-      /* --- Stats Cards Grid --- */
-      .stats-row {
-        display: grid;
-        grid-template-columns: 1fr;
         gap: 12px;
         margin-bottom: 12px;
       }
 
-      .stat-card {
-        background-color: #ffffff;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        padding: 14px;
-        box-shadow: var(--card-shadow);
-        position: relative;
-      }
-
-      .stat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 8px;
-      }
-
-      .stat-title {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--text-sub);
-      }
-
-      .stat-pill {
-        font-size: 9px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 10px;
-      }
-
-      .stat-pill.blue {
-        background-color: var(--blue-light);
-        color: var(--blue-text);
-      }
-
-      .stat-value {
-        font-size: 24px;
-        font-weight: 700;
+      .score-number {
+        font-size: 28px;
+        font-weight: 800;
         color: var(--text-main);
-        line-height: 1.1;
+        line-height: 1;
       }
 
-      .stat-footer-text {
-        font-size: 9px;
-        color: var(--text-sub);
-        margin-top: 6px;
-      }
-
-      /* Daily Scans Chart */
-      .stat-chart-container {
-        display: flex;
-        align-items: flex-end;
-        gap: 4px;
-        height: 24px;
-        position: absolute;
-        bottom: 14px;
-        right: 14px;
-      }
-
-      .chart-bar {
-        width: 6px;
-        background-color: #e2e8f0;
-        border-radius: 2px;
-      }
-
-      .chart-bar.active {
-        background-color: var(--blue-active);
-      }
-
-      /* Safety Score Progress Bar */
       .progress-bar-container {
-        height: 4px;
+        flex: 1;
+        height: 6px;
         background-color: #f1f5f9;
-        border-radius: 2px;
-        margin-top: 6px;
+        border-radius: 3px;
         overflow: hidden;
       }
 
       .progress-bar-fill {
         height: 100%;
-        background-color: var(--blue-active);
-        border-radius: 2px;
+        border-radius: 3px;
         transition: width 0.8s ease-out;
       }
 
-      /* Threats Blocked Tags */
-      .tags-container {
-        display: flex;
-        gap: 4px;
-        position: absolute;
-        bottom: 14px;
-        right: 14px;
-      }
-
-      .mini-tag {
-        font-size: 9px;
-        font-weight: 700;
-        background-color: var(--gray-bg);
-        color: var(--gray-text);
-        padding: 2px 5px;
-        border-radius: 4px;
-      }
-
-      /* --- Recent Activity Section --- */
-      .section-header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        padding: 0 4px;
-      }
-
-      .section-header-title {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-main);
-      }
-
-      .section-header-link {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--blue-active);
-        text-decoration: none;
-      }
-
-      .activity-list {
+      .risk-factors {
         display: flex;
         flex-direction: column;
+        gap: 8px;
       }
 
-      .activity-item {
+      .risk-factor {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #f1f5f9;
-      }
-
-      .activity-item:last-child {
-        border-bottom: none;
-      }
-
-      .activity-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .activity-icon-wrapper {
-        width: 32px;
-        height: 32px;
-        background-color: var(--gray-bg);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gray-text);
-      }
-
-      .activity-details {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .activity-domain {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-main);
-      }
-
-      .activity-category {
-        font-size: 9px;
-        color: var(--text-sub);
-      }
-
-      .activity-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-      }
-
-      .status-pill {
-        font-size: 9px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 10px;
-      }
-
-      .status-pill.verified {
-        background-color: var(--blue-light);
-        color: var(--blue-text);
-      }
-
-      .status-pill.blocked {
-        background-color: #fee2e2;
-        color: #b91c1c;
-      }
-
-      .activity-time {
-        font-size: 9px;
-        color: var(--text-sub);
-      }
-
-      /* --- Threats Map Card --- */
-      .threats-map-wrapper {
-        position: relative;
-        height: 140px;
-        background-color: #27272a;
-        border-radius: 8px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 8px;
-      }
-
-      .threats-map-svg {
-        width: 100%;
-        height: 100%;
-        opacity: 0.15;
-      }
-
-      .global-monitor-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: rgba(255,255,255,0.1);
-        color: #ffffff;
-        font-size: 8px;
-        font-weight: 700;
-        padding: 3px 7px;
-        border-radius: 4px;
-        letter-spacing: 0.5px;
-      }
-
-      .pulse-ring {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: #ef4444;
-      }
-
-      .pulse-ring::after {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        border-radius: 50%;
-        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.4);
-        animation: mapPulse 1.5s infinite;
-      }
-
-      @keyframes mapPulse {
-        0% { transform: scale(1); opacity: 1; }
-        100% { transform: scale(2.5); opacity: 0; }
-      }
-
-      /* --- Smart Tip Card --- */
-      .smart-tip-card {
-        background-color: #09090b;
-        color: #ffffff;
-        border: none;
-      }
-
-      .smart-tip-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 9px;
-        font-weight: 700;
-        color: #38bdf8;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-      }
-
-      .smart-tip-desc {
-        font-size: 10px;
-        line-height: 1.5;
-        color: #cbd5e1;
-        margin-bottom: 12px;
-      }
-
-      .tip-learn-btn {
-        background-color: #27272a;
-        color: #ffffff;
-        border: none;
-        border-radius: 16px;
-        padding: 5px 12px;
-        font-size: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .tip-learn-btn:hover {
-        background-color: #3f3f46;
-      }
-
-      /* --- High Risk / Scan Result Dashboard View --- */
-      .high-risk-badge {
-        background-color: var(--orange-bg);
-        color: var(--orange-text);
-        font-size: 10px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 12px;
-        display: inline-block;
-        letter-spacing: 0.5px;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-      }
-
-      .threat-dial-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 8px 0 16px;
-      }
-
-      .threat-dial {
-        position: relative;
-        width: 140px;
-        height: 140px;
-      }
-
-      .threat-dial-svg {
-        transform: rotate(-90deg);
-        width: 100%;
-        height: 100%;
-      }
-
-      .threat-dial-bg {
-        fill: none;
-        stroke: #f1f5f9;
-        stroke-width: 10;
-      }
-
-      .threat-dial-fill {
-        fill: none;
-        stroke: #d97706; /* Orange dial fill */
-        stroke-width: 10;
-        stroke-linecap: round;
-        stroke-dasharray: 376.99; /* 2 * PI * r (r=60) */
-        stroke-dashoffset: 376.99;
-        transition: stroke-dashoffset 0.8s ease-out;
-      }
-
-      .threat-dial-content {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .threat-percent {
-        font-size: 28px;
-        font-weight: 700;
-        color: #b45309;
-        line-height: 1;
-      }
-
-      .threat-label {
-        font-size: 8px;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--text-sub);
-        margin-top: 2px;
-      }
-
-      .inspected-url-label {
-        font-size: 9px;
-        font-weight: 700;
-        color: var(--text-sub);
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
-      }
-
-      .inspected-url-box {
-        background-color: var(--gray-bg);
-        border-radius: 6px;
-        padding: 8px 10px;
-        display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 8px;
         font-size: 10px;
-        color: var(--text-main);
-        word-break: break-all;
+        color: var(--text-sub);
         line-height: 1.4;
       }
 
-      .inspected-url-box svg {
-        flex-shrink: 0;
-        color: var(--text-sub);
-      }
-
-      .risk-factor-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .risk-factor-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .risk-factor-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 1;
-      }
-
-      .risk-icon-wrapper {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .risk-icon-wrapper.critical {
-        background-color: #fee2e2;
-        color: #b91c1c;
-      }
-
-      .risk-icon-wrapper.warning {
-        background-color: var(--yellow-bg);
-        color: var(--yellow-text);
-      }
-
-      .risk-icon-wrapper.minor {
-        background-color: var(--gray-bg);
-        color: var(--gray-text);
-      }
-
-      .risk-factor-details {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .risk-factor-name {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-main);
-      }
-
-      .risk-factor-desc {
-        font-size: 9px;
-        color: var(--text-sub);
-        line-height: 1.35;
-      }
-
-      .risk-badge {
-        font-size: 9px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 4px;
-        flex-shrink: 0;
-      }
-
-      .risk-badge.critical {
-        background-color: var(--orange-bg);
-        color: var(--orange-text);
-      }
-
-      .risk-badge.warning {
-        background-color: var(--yellow-bg);
-        color: var(--yellow-text);
-      }
-
-      .risk-badge.minor {
-        background-color: var(--gray-bg);
-        color: var(--gray-text);
-      }
-
-      .action-buttons-row {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 16px;
-      }
-
-      .btn-safety {
-        width: 100%;
-        background-color: #0f172a;
-        color: #ffffff;
-        border: none;
-        border-radius: 8px;
-        padding: 12px;
-        font-size: 12px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .btn-safety:hover {
-        background-color: #1e293b;
-      }
-
-      .btn-proceed {
-        width: 100%;
-        background-color: #e2e8f0;
-        color: #0f172a;
-        border: none;
-        border-radius: 8px;
-        padding: 12px;
-        font-size: 12px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .btn-proceed:hover {
-        background-color: #cbd5e1;
-      }
-
-      /* Visual Site Breakdown Card */
-      .visual-breakdown-card {
-        margin-top: 12px;
-        border-radius: 12px;
-        height: 120px;
-        background-size: cover;
-        background-position: center;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        box-shadow: var(--card-shadow);
-        cursor: pointer;
-      }
-
-      .visual-breakdown-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 100%);
-        display: flex;
-        align-items: flex-end;
-        padding: 12px 16px;
-      }
-
-      .visual-breakdown-text {
-        color: #ffffff;
-        font-size: 11px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      /* --- History Tab Content --- */
-      .history-title-row {
-        margin-bottom: 14px;
-      }
-
-      .history-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-main);
-      }
-
-      .history-subtitle {
-        font-size: 10px;
-        color: var(--text-sub);
-        margin-top: 2px;
-        line-height: 1.4;
-      }
-
-      .search-box-container {
-        position: relative;
-        margin-bottom: 12px;
-      }
-
-      .search-input {
-        width: 100%;
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 8px 12px 8px 34px;
-        font-size: 11px;
-        color: var(--text-main);
-        outline: none;
-        transition: border-color 0.2s;
-      }
-
-      .search-input:focus {
-        border-color: var(--blue-active);
-      }
-
-      .search-icon-pos {
-        position: absolute;
-        left: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-sub);
-        pointer-events: none;
-      }
-
-      /* Summary Progress Grid */
-      .history-summary-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        align-items: center;
-      }
-
-      .history-summary-left {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .history-scanned-label {
-        font-size: 9px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--text-sub);
-        letter-spacing: 0.5px;
-      }
-
-      .history-scanned-val {
-        font-size: 28px;
-        font-weight: 800;
-        color: var(--text-main);
-        line-height: 1.15;
-      }
-
-      /* Split color segmented progress bar */
-      .summary-progress-bar {
-        display: flex;
-        height: 6px;
-        border-radius: 3px;
-        overflow: hidden;
-        margin-top: 8px;
-      }
-
-      .summary-segment {
-        height: 100%;
-      }
-
-      .summary-segment.malicious {
-        background-color: #ef4444;
-      }
-
-      .summary-segment.suspicious {
-        background-color: #f59e0b;
-      }
-
-      .summary-segment.safe {
-        background-color: var(--blue-active);
-      }
-
-      .history-summary-right {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-
-      .history-summary-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 10px;
-        color: var(--text-sub);
-      }
-
-      .summary-item-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 500;
-      }
-
-      .summary-color-dot {
+      .risk-dot {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-      }
-
-      .summary-color-dot.malicious { background-color: #ef4444; }
-      .summary-color-dot.suspicious { background-color: #f59e0b; }
-      .summary-color-dot.safe { background-color: var(--blue-active); }
-
-      .summary-item-val {
-        font-weight: 700;
-        color: var(--text-main);
-      }
-
-      /* Live Protection Slate */
-      .live-protection-slate {
-        background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
-        color: #ffffff;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .live-protection-slate-shield {
-        position: absolute;
-        right: -10px;
-        bottom: -20px;
-        opacity: 0.08;
-        color: #ffffff;
-      }
-
-      .live-protection-slate-title {
-        font-size: 12px;
-        font-weight: 700;
-        color: #ffffff;
-        margin-bottom: 4px;
-      }
-
-      .live-protection-slate-desc {
-        font-size: 9px;
-        color: #a1a1aa;
-        line-height: 1.4;
-        margin-bottom: 12px;
-        max-width: 80%;
-      }
-
-      .manage-shield-btn {
-        background-color: #ffffff;
-        color: #09090b;
-        border: none;
-        border-radius: 16px;
-        padding: 5px 12px;
-        font-size: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.2s;
-      }
-
-      .manage-shield-btn:hover {
-        opacity: 0.9;
-      }
-
-      /* History List */
-      .history-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .history-card {
-        background-color: #ffffff;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        padding: 12px;
-        box-shadow: var(--card-shadow);
-        position: relative;
-      }
-
-      .history-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 6px;
-      }
-
-      .history-card-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-        min-width: 0;
-      }
-
-      .history-card-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        margin-top: 4px;
         flex-shrink: 0;
       }
 
-      .history-card-icon.malicious {
-        background-color: #fee2e2;
-        color: #b91c1c;
-      }
+      .risk-dot.critical { background: #dc2626; }
+      .risk-dot.warning { background: #f59e0b; }
+      .risk-dot.minor { background: #9ca3af; }
 
-      .history-card-icon.suspicious {
-        background-color: var(--yellow-bg);
-        color: var(--yellow-text);
-      }
-
-      .history-card-icon.safe {
-        background-color: var(--blue-light);
-        color: var(--blue-text);
-      }
-
-      .history-card-info {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-      }
-
-      .history-card-domain {
-        font-size: 11px;
+      .section-title {
+        font-size: 12px;
         font-weight: 700;
         color: var(--text-main);
-        white-space: nowrap;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .deep-page {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        overflow: hidden;
+      }
+
+      .deep-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        background: #f9fafb;
+      }
+
+      .deep-page-path {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-main);
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .history-card-date {
-        font-size: 8px;
+      .deep-page-score {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .deep-page-details {
+        padding: 8px 10px;
+        font-size: 9px;
         color: var(--text-sub);
+        line-height: 1.6;
+        border-top: 1px solid #f1f5f9;
       }
 
-      .history-card-desc {
-        font-size: 9.5px;
-        color: var(--text-sub);
-        line-height: 1.4;
-        margin-bottom: 4px;
+      .evidence-card {
+        margin-bottom: 8px;
       }
 
-      .history-card-actions {
+      .evidence-header {
         display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 4px;
-        color: var(--text-sub);
-      }
-
-      .history-action-btn {
-        background: none;
-        border: none;
-        color: var(--text-sub);
-        cursor: pointer;
-        display: flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
+        cursor: pointer;
+        padding: 8px 0;
+        user-select: none;
       }
 
-      .load-more-btn {
-        width: 100%;
-        background: none;
-        border: none;
-        color: var(--text-sub);
+      .evidence-header:hover { opacity: 0.8; }
+
+      .evidence-title {
         font-size: 11px;
         font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 8px 0 16px;
-        cursor: pointer;
+        color: var(--text-main);
       }
 
-      .load-more-btn svg {
+      .evidence-chevron {
+        color: #9ca3af;
         transition: transform 0.2s;
       }
 
-      .load-more-btn:hover {
-        color: var(--text-main);
+      .evidence-chevron.open { transform: rotate(90deg); }
+
+      .evidence-content {
+        font-size: 10px;
+        color: var(--text-sub);
+        line-height: 1.6;
       }
 
-      /* --- Settings Tab Content --- */
-      .settings-title-row {
-        margin-bottom: 14px;
+      .evidence-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
       }
 
-      .settings-title {
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .stat-item {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .stat-value {
         font-size: 20px;
         font-weight: 700;
         color: var(--text-main);
+        line-height: 1.2;
       }
 
-      .settings-subtitle {
-        font-size: 10px;
+      .stat-label {
+        font-size: 9px;
         color: var(--text-sub);
         margin-top: 2px;
-        line-height: 1.4;
       }
 
-      .settings-section-header {
+      .tag {
         font-size: 9px;
-        font-weight: 700;
-        color: var(--text-sub);
-        letter-spacing: 0.8px;
-        margin-bottom: 8px;
-        padding-left: 4px;
-        text-transform: uppercase;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-block;
+        margin: 1px;
       }
 
-      .settings-list {
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        box-shadow: var(--card-shadow);
-        overflow: hidden;
-        margin-bottom: 16px;
-      }
+      .tag.red { background: #fee2e2; color: #991b1b; }
+      .tag.amber { background: #fef3c7; color: #92400e; }
+      .tag.green { background: #dcfce7; color: #166534; }
+      .tag.blue { background: #dbeafe; color: #1e40af; }
+      .tag.gray { background: #f3f4f6; color: #4b5563; }
 
-      .settings-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .settings-item:last-child {
-        border-bottom: none;
-      }
-
-      .settings-item-left {
+      .loading-overlay {
+        position: absolute;
+        top: 52px; left: 0; right: 0; bottom: 0;
+        background-color: rgba(255,255,255,0.95);
+        z-index: 50;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
       }
 
-      .settings-item-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-main);
-      }
-
-      .settings-item-desc {
-        font-size: 9px;
-        color: var(--text-sub);
-        line-height: 1.3;
-      }
-
-      /* Toggle Switch */
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 38px;
-        height: 22px;
-        flex-shrink: 0;
-      }
-
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #e2e8f0;
-        transition: .2s;
-        border-radius: 22px;
-      }
-
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .2s;
+      .loading-spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--blue-active);
         border-radius: 50%;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
       }
 
-      input:checked + .slider {
-        background-color: var(--blue-active);
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
 
-      input:checked + .slider:before {
-        transform: translateX(16px);
-      }
-
-      /* Update Button */
-      .update-outline-btn {
-        background: none;
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 6px 12px;
-        color: var(--text-main);
-        font-size: 10px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      .update-outline-btn:hover {
-        background-color: var(--gray-bg);
-      }
-
-      /* Link Items */
-      .settings-link-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border-color);
-        cursor: pointer;
-        transition: background-color 0.15s;
-        text-decoration: none;
-      }
-
-      .settings-link-item:hover {
-        background-color: #f8fafc;
-      }
-
-      .settings-link-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--text-main);
+      .loading-text {
         font-size: 11px;
-        font-weight: 600;
-      }
-
-      .settings-link-left svg {
         color: var(--text-sub);
+        font-weight: 500;
       }
 
-      .chevron-right {
-        color: #cbd5e1;
-      }
-
-      .reset-link-wrapper {
-        text-align: center;
-        margin-top: 8px;
-        margin-bottom: 24px;
-      }
-
-      .reset-link-btn {
-        background: none;
-        border: none;
-        color: #ef4444;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-
-      .reset-link-btn:hover {
-        text-decoration: underline;
-      }
-
-      /* --- Footer Tab Navigation --- */
       .footer-nav {
         height: 64px;
         background-color: #ffffff;
@@ -1341,110 +442,63 @@
         stroke-width: 2;
       }
 
-      .tab-btn.active {
-        background-color: var(--blue-active);
-        color: #ffffff;
+      .tab-btn.active { background-color: var(--blue-active); color: #ffffff; }
+
+      .credentials-card {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 8px;
       }
 
-      /* Loading State Overlay */
-      .loading-overlay {
-        position: absolute;
-        top: 52px; left: 0; right: 0; bottom: 0;
-        background-color: rgba(255,255,255,0.95);
-        z-index: 50;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 32px;
-      }
+      .credentials-card.secure { background: #f0fdf4; border-color: #bbf7d0; }
+      .credentials-card.danger { background: #fef2f2; border-color: #fecaca; }
 
-      .loading-spinner {
-        width: 42px;
-        height: 42px;
-        border: 4px solid var(--border-color);
-        border-top: 4px solid var(--blue-active);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 24px;
-      }
-
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
-      .loading-step-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
-        max-width: 240px;
-      }
-
-      .loading-step {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 11px;
-        color: var(--text-sub);
-        font-weight: 500;
-      }
-
-      .loading-step.active {
-        color: var(--text-main);
-        font-weight: 600;
-      }
-
-      .loading-step.completed {
-        color: #10b981;
-      }
-
-      .step-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #cbd5e1;
-        flex-shrink: 0;
-      }
-
-      .loading-step.active .step-indicator {
-        background-color: var(--blue-active);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-      }
-
-      .loading-step.completed .step-indicator {
-        background-color: #10b981;
-      }
-
-      .toggle-list-btn {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        background: none;
-        border: none;
-        color: var(--blue-active);
+      .cred-title {
         font-size: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 4px 0;
-        width: 100%;
-        transition: opacity 0.15s;
-      }
-      .toggle-list-btn:hover {
-        opacity: 0.8;
-      }
-      .toggle-list-btn svg {
-        transition: transform 0.2s;
-      }
-      .toggle-list-btn.expanded svg {
-        transform: rotate(90deg);
+        font-weight: 700;
+        margin-bottom: 4px;
       }
 
-      .hidden {
-        display: none !important;
+      .cred-detail {
+        font-size: 9px;
+        color: var(--text-sub);
+        line-height: 1.5;
       }
 
+      .perm-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+        font-size: 10px;
+      }
+
+      .smart-tip-card { background: #09090b; color: #ffffff; border: none; }
+      .smart-tip-header {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 9px; font-weight: 700; color: #38bdf8;
+        letter-spacing: 0.5px; margin-bottom: 8px;
+      }
+      .smart-tip-desc { font-size: 10px; line-height: 1.5; color: #cbd5e1; }
+
+      .vision-grid { display: flex; flex-direction: column; gap: 6px; }
+      .vision-analysis-line {
+        font-size: 11px; font-weight: 600; color: var(--text-main);
+        padding: 8px; background: #f9fafb; border-radius: 6px;
+        margin-bottom: 4px; line-height: 1.5;
+      }
+      .vision-item {
+        display: flex; align-items: flex-start; gap: 8px;
+        padding: 6px 8px; border-radius: 6px; font-size: 10px;
+      }
+      .vision-item.danger { background: #fef2f2; color: #991b1b; }
+      .vision-item.warning { background: #fffbeb; color: #92400e; }
+      .vision-label {
+        font-weight: 700; white-space: nowrap; flex-shrink: 0;
+        min-width: 80px; font-size: 9px; text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
     </style>
   </head>
   <body>
@@ -1452,579 +506,297 @@
     <!-- Header -->
     <div class="header">
       <div class="header-left">
-        <span class="logo-shield">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </span>
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
         <span class="logo-text">Site Sentinel</span>
-      </div>
-      <div class="header-right">
-        <!-- Scan button (shown in Dashboard / Settings) -->
-        <button id="btn-header-scan" class="scan-pill-btn">Scan</button>
-        <!-- Search icon toggle (shown in History) -->
-        <button id="btn-header-search" class="search-header-btn hidden">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-        </button>
       </div>
     </div>
 
-    <!-- Scrollable content area -->
+    <!-- Content -->
     <div class="content-viewport" id="main-viewport">
 
       <!-- ==================== TAB 1: DASHBOARD ==================== -->
       <div id="tab-dashboard" class="tab-content active">
-        
-        <!-- STATE A: SAFE VERDICT (hidden until scan) -->
-        <div id="dashboard-safe" class="hidden">
-          <div class="card" style="margin-bottom: 12px;">
-            <div class="live-protection-badge">
-              <span class="dot"></span> LIVE PROTECTION
+
+        <!-- STATE A: PRE-SCAN LANDING -->
+        <div id="state-landing">
+          <div class="card landing-card">
+            <div class="landing-shield">
+              <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
             </div>
-            <div class="verdict-title">
-              <span id="safe-domain-label">--</span> is<br><span class="verdict-safe">SAFE</span>
-            </div>
-            <div class="verdict-desc">
-              Site Sentinel analyzed this site's SSL certificate, domain age, and heuristic patterns. No threats detected.
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-              <span style="font-size:10px;font-weight:600;color:var(--text-sub);">Safety Score</span>
-              <span style="font-size:22px;font-weight:800;color:var(--text-main);" id="label-safety-score">--</span>
-              <div class="progress-bar-container" style="flex:1;">
-                <div class="progress-bar-fill" id="fill-safety-score" style="width: 0%;"></div>
-              </div>
-            </div>
-            <button id="btn-analyze-now" class="analyze-btn">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <div class="landing-title">Ready to Scan</div>
+            <div class="landing-domain" id="landing-domain">Loading...</div>
+            <button class="scan-btn" id="btn-start-scan">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              Analyze Current Page
+              Scan Now
             </button>
           </div>
         </div>
 
-        <!-- STATE B: HIGH RISK VERDICT (hidden until scan) -->
-        <div id="dashboard-risk" class="hidden">
-          <div class="card" style="margin-bottom: 12px; text-align: center;">
-            <div class="high-risk-badge">High Risk Detected</div>
-            
-            <div class="threat-dial-container">
-              <div class="threat-dial">
-                <svg class="threat-dial-svg" viewBox="0 0 140 140">
-                  <circle class="threat-dial-bg" cx="70" cy="70" r="60"></circle>
-                  <circle class="threat-dial-fill" id="risk-dial-circle" cx="70" cy="70" r="60"></circle>
-                </svg>
-                <div class="threat-dial-content">
-                  <span class="threat-percent" id="risk-score-val">78%</span>
-                  <span class="threat-label">Potential Threat</span>
-                </div>
-              </div>
-            </div>
+        <!-- STATE B: POST-SCAN RESULTS -->
+        <div id="state-results" class="hidden">
 
-            <div class="verdict-desc" style="margin-bottom: 0;">
-              Multiple critical security anomalies identified in the analyzed endpoint.
-            </div>
-          </div>
-
-          <!-- Inspected URL Card -->
-          <div class="card" style="margin-bottom: 12px;">
-            <div class="inspected-url-label">Inspected URL</div>
-            <div class="inspected-url-box">
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-              </svg>
-              <span id="risk-domain-url">--</span>
-            </div>
-          </div>
-
-          <!-- Risk Factor Breakdown (dynamic) -->
-          <div class="card">
-            <div class="card-title">Risk Factor Breakdown</div>
-            <div class="risk-factor-list" id="risk-factor-list">
-              <div style="font-size:10px;color:var(--text-sub);">Scan the page to see risk factor analysis.</div>
-            </div>
-          </div>
-
-          <!-- Action Safety Navigation Buttons -->
-          <div class="action-buttons-row">
-            <button id="btn-back-safety" class="btn-safety">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                <polyline points="9 11 11 13 15 9"></polyline>
-              </svg>
-              Go Back to Safety
-            </button>
-            <button id="btn-proceed-anyway" class="btn-proceed">
-              Proceed Anyway
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
-          </div>
-
-        </div>
-
-        <!-- Quick Metrics Row (always visible) -->
-        <div class="stats-row">
-          <!-- Data Fields Detected Card -->
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">Data Fields</span>
-              <span class="stat-pill blue" id="pill-data-fields">Scanning...</span>
-            </div>
-            <div class="stat-value" id="label-data-fields">0</div>
-            <div class="stat-footer-text" id="footer-data-fields">Personal data fields on this page</div>
-          </div>
-
-          <!-- External Links Card -->
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">External Links</span>
-            </div>
-            <div class="stat-value" id="label-ext-links">0</div>
-            <div class="progress-bar-container">
-              <div class="progress-bar-fill" id="fill-ext-ratio" style="width: 0%;"></div>
-            </div>
-            <div class="stat-footer-text" id="footer-ext-links">of total links go off-domain</div>
-          </div>
-
-          <!-- Cookies / Trackers Card -->
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">Trackers</span>
-            </div>
-            <div class="stat-value" id="label-trackers">0</div>
-            <div class="tags-container" id="tracker-tags">
-              <span class="mini-tag">Cookies</span>
-            </div>
-            <div class="stat-footer-text" id="footer-trackers">cookies & scripts on this page</div>
-          </div>
-        </div>
-
-        <!-- Network Telemetry Card (always visible) -->
-        <div class="card" id="card-network-telemetry" style="margin-bottom: 12px;">
-          <div class="card-title">Network Telemetry (live)</div>
-          <div id="network-telemetry-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Third-party requests</span><span id="net-requests" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Third-party domains</span><span id="net-domains" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tracking scripts</span><span id="net-tracking" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Analytics scripts</span><span id="net-analytics" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Advertising scripts</span><span id="net-ads" style="font-weight:700;">0</span></div>
-          </div>
-          <div style="margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px;">
-            <button id="btn-toggle-trackers" class="toggle-list-btn" style="display:none;">
-              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              <span id="btn-toggle-trackers-text">View Domain Breakdown</span>
-            </button>
-            <div id="tracker-domains-list" style="display:none;margin-top:6px;max-height:160px;overflow-y:auto;font-size:9px;line-height:1.8;"></div>
-          </div>
-        </div>
-
-        <!-- Download Protection Card (always visible) -->
-        <div class="card" id="card-download-protection" style="margin-bottom: 12px;">
-          <div class="card-title">Download Protection</div>
-          <div id="download-protection-content" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+          <!-- Verdict Card -->
+          <div class="card" id="results-verdict">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
               <div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                  <span style="font-size:24px;font-weight:700;color:var(--text-main);" id="dp-blocked">0</span>
-                  <span style="font-size:9px;">blocked</span>
-                  <span style="font-size:24px;font-weight:700;color:var(--text-main);margin-left:8px;" id="dp-warned">0</span>
-                  <span style="font-size:9px;">warned</span>
+                <div id="verdict-badge" class="verdict-badge safe">Safe</div>
+                <div class="verdict-title" id="verdict-title">This site appears safe</div>
+              </div>
+              <button id="btn-rescan" style="background:var(--blue-active);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;">Scan Again</button>
+            </div>
+            <div class="verdict-desc" id="verdict-desc">No significant threats detected.</div>
+
+            <div class="score-row">
+              <span class="score-number" id="verdict-score">--</span>
+              <span style="font-size:10px;color:var(--text-sub);font-weight:500;">Safety Score</span>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="verdict-score-fill" style="width:0%;"></div>
+              </div>
+            </div>
+
+            <div id="verdict-url" style="font-size:9px;color:var(--text-sub);word-break:break-all;margin-bottom:12px;padding:6px 8px;background:#f9fafb;border-radius:6px;"></div>
+          </div>
+
+          <!-- Plain English Risk Briefing -->
+          <div id="plain-english-briefing" class="hidden">
+            <div class="card" style="background:#f0fdf4;border-color:#bbf7d0;border-left:3px solid #22c55e;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span style="font-size:10px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.5px;">What This Means For You</span>
+              </div>
+              <div id="briefing-text" style="font-size:12px;line-height:1.6;color:#065f46;font-weight:500;"></div>
+            </div>
+          </div>
+
+          <!-- Vision Analysis -->
+          <div id="section-vision-analysis" class="hidden">
+            <div class="card">
+              <div class="section-title">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  Visual Threat Analysis
                 </div>
               </div>
-              <span id="dp-status" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:#dcfce7;color:#166534;">Active</span>
-            </div>
-            <div id="dp-recent" style="margin-top:6px;max-height:80px;overflow-y:auto;"></div>
-          </div>
-        </div>
-
-        <!-- Recent Activity (always visible) -->
-        <div class="section-header-row" style="margin-top: 8px;">
-          <span class="section-header-title">Recent Activity</span>
-          <a href="#" id="link-view-history" class="section-header-link">View History</a>
-        </div>
-        <div class="card" style="padding: 4px 16px;">
-          <div class="activity-list" id="activity-list">
-            <div class="activity-item" style="justify-content:center;padding:16px;color:var(--text-sub);font-size:11px;">
-              No recent scans. Click "Analyze" to scan the current page.
+              <div id="vision-content" style="font-size:10px;color:var(--text-sub);"></div>
             </div>
           </div>
-        </div>
 
-        <!-- External Links Detail Card (always visible) -->
-        <div class="card" id="card-ext-links" style="margin-top: 12px;">
-          <div class="card-title">External Link Destinations</div>
-          <div id="ext-links-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            No external links detected on this page.
+          <!-- Risk Factors -->
+          <div id="section-risk-factors" class="hidden">
+            <div class="card">
+              <div class="section-title">Risk Factors</div>
+              <div class="risk-factors" id="risk-factors-list"></div>
+            </div>
           </div>
-          <div id="ext-links-expand" style="display:none;margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px;">
-            <button id="btn-toggle-ext-links" class="toggle-list-btn">
-              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              <span id="btn-toggle-ext-links-text">View Subdomain Breakdown</span>
-            </button>
-            <div id="ext-urls-list" style="display:none;margin-top:6px;max-height:160px;overflow-y:auto;font-size:9px;line-height:1.8;word-break:break-all;"></div>
-          </div>
-        </div>
 
-        <!-- Suspicious Links Card (always visible) -->
-        <div class="card" id="card-suspicious-links" style="margin-top: 12px;">
-          <div class="card-title">Suspicious External Links</div>
-          <div id="suspicious-links-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            No suspicious external links detected.
+          <!-- Deep Scan Results -->
+          <div id="section-deep-scan" class="hidden">
+            <div class="card">
+              <div class="section-title">Site-wide Scan</div>
+              <div id="deep-scan-summary" style="font-size:10px;color:var(--text-sub);margin-bottom:8px;"></div>
+              <div id="deep-scan-pages"></div>
+            </div>
           </div>
-        </div>
 
-        <!-- Threat Category Breakdown Card (always visible) -->
-        <div class="card" id="card-threat-categories" style="margin-top: 12px;">
-          <div class="card-title">Threat Category Breakdown</div>
-          <div id="threat-categories-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            No suspicious keywords detected on this page.
+          <!-- Credential Form Analysis -->
+          <div id="section-credentials" class="hidden">
+            <div class="card">
+              <div class="section-title">Form Security Analysis</div>
+              <div id="credential-content"></div>
+            </div>
           </div>
-        </div>
 
-        <!-- Security Analysis Card (always visible) -->
-        <div class="card" id="card-security-analysis" style="margin-top: 12px;">
-          <div class="card-title">Security Analysis</div>
-          <div id="security-analysis-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Content-Security-Policy</span><span id="sec-csp" style="font-weight:700;">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>X-Frame-Options</span><span id="sec-xframe" style="font-weight:700;">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Hidden iframes (clickjacking risk)</span><span id="sec-hidden-iframes" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Hidden inputs</span><span id="sec-hidden-inputs" style="font-weight:700;">0</span></div>
+          <!-- Quick Stats -->
+          <div class="stats-grid" id="section-stats">
+            <div class="stat-item">
+              <div class="stat-value" id="stat-links">0</div>
+              <div class="stat-label">External Links</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-trackers">0</div>
+              <div class="stat-label">Trackers</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-forms">0</div>
+              <div class="stat-label">Forms</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-scripts">0</div>
+              <div class="stat-label">Scripts</div>
+            </div>
           </div>
-        </div>
 
-        <!-- Hidden Elements Card (always visible) -->
-        <div class="card" id="card-hidden-elements" style="margin-top: 12px;">
-          <div class="card-title">Hidden Elements & Clickjacking Risk</div>
-          <div id="hidden-elements-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tiny/hidden iframes</span><span id="he-tiny-iframes" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Hidden input fields</span><span id="he-hidden-inputs" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Invisible elements w/ content</span><span id="he-invisible" style="font-weight:700;">0</span></div>
+          <!-- Expandable Evidence Sections -->
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-network">
+              <span class="evidence-title">Network Telemetry</span>
+              <span class="evidence-chevron" id="chevron-network">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-network">
+              <div class="evidence-row"><span>Third-party requests</span><span id="net-requests" style="font-weight:700;">0</span></div>
+              <div class="evidence-row"><span>Third-party domains</span><span id="net-domains" style="font-weight:700;">0</span></div>
+              <div class="evidence-row"><span>Tracking scripts</span><span id="net-tracking" style="font-weight:700;">0</span></div>
+              <div class="evidence-row"><span>Analytics scripts</span><span id="net-analytics" style="font-weight:700;">0</span></div>
+              <div class="evidence-row"><span>Advertising scripts</span><span id="net-ads" style="font-weight:700;">0</span></div>
+            </div>
           </div>
-        </div>
 
-        <!-- Data Collection Summary Card (always visible) -->
-        <div class="card" id="card-data-collection">
-          <div class="card-title">Data Collection Summary</div>
-          <div id="data-collection-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Forms detected</span><span id="dc-forms" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Login forms</span><span id="dc-login" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Password fields</span><span id="dc-password" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Email fields</span><span id="dc-email" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Phone fields</span><span id="dc-phone" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Credit card fields</span><span id="dc-cc" style="font-weight:700;">0</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Iframes (embedded content)</span><span id="dc-iframes" style="font-weight:700;">0</span></div>
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-security">
+              <span class="evidence-title">Security &amp; Privacy</span>
+              <span class="evidence-chevron" id="chevron-security">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-security">
+              <div class="evidence-row"><span>HTTPS</span><span id="sec-https" style="font-weight:700;">--</span></div>
+              <div class="evidence-row"><span>Content-Security-Policy</span><span id="sec-csp" style="font-weight:700;">--</span></div>
+              <div class="evidence-row"><span>X-Frame-Options</span><span id="sec-xframe" style="font-weight:700;">--</span></div>
+              <div class="evidence-row"><span>Privacy Policy</span><span id="sec-privacy" style="font-weight:700;">--</span></div>
+              <div class="evidence-row"><span>Terms &amp; Conditions</span><span id="sec-terms" style="font-weight:700;">--</span></div>
+              <div class="evidence-row"><span>Contact Page</span><span id="sec-contact" style="font-weight:700;">--</span></div>
+            </div>
           </div>
-        </div>
 
-        <!-- Permissions & Privacy Card (always visible) -->
-        <div class="card" id="card-permissions">
-          <div class="card-title">Browser Permissions Requested</div>
-          <div id="permissions-list" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Geolocation</span><span id="perm-geo" style="font-weight:700;">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Notifications</span><span id="perm-notif" style="font-weight:700;">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Camera</span><span id="perm-camera" style="font-weight:700;">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Microphone</span><span id="perm-mic" style="font-weight:700;">--</span></div>
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-permissions">
+              <span class="evidence-title">Browser Permissions</span>
+              <span class="evidence-chevron" id="chevron-permissions">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-permissions">
+              <div class="perm-item"><span>Geolocation</span><span id="perm-geo" style="font-weight:700;">--</span></div>
+              <div class="perm-item"><span>Notifications</span><span id="perm-notif" style="font-weight:700;">--</span></div>
+              <div class="perm-item"><span>Camera</span><span id="perm-camera" style="font-weight:700;">--</span></div>
+              <div class="perm-item"><span>Microphone</span><span id="perm-mic" style="font-weight:700;">--</span></div>
+            </div>
           </div>
-        </div>
 
-        <!-- Security Tip (always visible) -->
-        <div class="card smart-tip-card" style="margin-top: 12px;">
-          <div class="smart-tip-header">
-            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-            SECURITY TIP
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-hidden">
+              <span class="evidence-title">Hidden Elements</span>
+              <span class="evidence-chevron" id="chevron-hidden">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-hidden">
+              <div class="evidence-row"><span>Hidden/tiny iframes</span><span id="he-iframes" style="font-weight:700;">0</span></div>
+              <div class="evidence-row"><span>Hidden input fields</span><span id="he-inputs" style="font-weight:700;">0</span></div>
+              <div class="evidence-row"><span>Invisible elements with content</span><span id="he-invisible" style="font-weight:700;">0</span></div>
+            </div>
           </div>
-          <div class="smart-tip-desc" id="security-tip-text">
-            Scan this page to get a personalized security tip.
-          </div>
-        </div>
 
-        <!-- After-scan detail cards (hidden until scan) -->
-        <div id="card-risk-ext-links" class="card hidden" style="margin-top:12px;">
-          <div class="card-title">External Links &amp; Destinations</div>
-          <div id="risk-ext-links-content" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
+          <!-- External Link Destinations -->
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-ext-links">
+              <span class="evidence-title">External Link Destinations</span>
+              <span class="evidence-chevron" id="chevron-ext-links">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-ext-links">
+              <div id="ext-links-list"></div>
+            </div>
           </div>
-        </div>
 
-        <div id="card-risk-trackers" class="card hidden" style="margin-top:12px;">
-          <div class="card-title">
-            Tracker Ranking
-            <span style="font-weight:400;font-size:9px;color:var(--text-sub);margin-left:4px;">(by risk level)</span>
+          <!-- Suspicious External Links -->
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-suspicious-links">
+              <span class="evidence-title">Suspicious External Links</span>
+              <span class="evidence-chevron" id="chevron-suspicious-links">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-suspicious-links">
+              <div id="suspicious-links-list">None detected</div>
+            </div>
           </div>
-          <div id="risk-trackers-content" style="font-size:10px;color:var(--text-sub);line-height:1.6;">
+
+          <!-- Tracker Ranking -->
+          <div class="card evidence-card">
+            <div class="evidence-header" data-target="evidence-tracker-ranking">
+              <span class="evidence-title">Tracker Ranking</span>
+              <span class="evidence-chevron" id="chevron-tracker-ranking">&#9654;</span>
+            </div>
+            <div class="evidence-content hidden" id="evidence-tracker-ranking">
+              <div id="tracker-ranking-list"></div>
+            </div>
           </div>
+
+          <!-- Security Tip -->
+          <div class="card smart-tip-card" style="margin-top: 12px;">
+            <div class="smart-tip-header">
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              SECURITY TIP
+            </div>
+            <div class="smart-tip-desc" id="security-tip-text">Scan this page to get a personalized security tip.</div>
+          </div>
+
+
+
         </div>
 
       </div>
 
       <!-- ==================== TAB 2: HISTORY ==================== -->
       <div id="tab-history" class="tab-content">
-        
-        <div class="history-title-row">
-          <h2 class="history-title">Security History</h2>
-          <div class="history-subtitle">Review all URL analysis and security flags identified by Site Sentinel.</div>
+        <div class="card" style="text-align:center;padding:24px;">
+          <div style="font-size:10px;color:var(--text-sub);">Scan history will appear here after scanning pages.</div>
         </div>
-
-        <div class="search-box-container">
-          <span class="search-icon-pos">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input type="text" class="search-input" id="input-search-history" placeholder="Search URLs or status...">
-        </div>
-
-        <!-- Summary Statistics Card -->
-        <div class="card" style="margin-bottom: 12px;">
-          <div class="history-summary-grid">
-            <div class="history-summary-left">
-              <span class="history-scanned-label">Total Scanned</span>
-              <span class="history-scanned-val" id="hist-total-scanned">0</span>
-              
-              <!-- Split color segmented progress bar -->
-              <div class="summary-progress-bar">
-                <div class="summary-segment malicious" id="segment-malicious" style="width: 0%;"></div>
-                <div class="summary-segment suspicious" id="segment-suspicious" style="width: 0%;"></div>
-                <div class="summary-segment safe" id="segment-safe" style="width: 0%;"></div>
-              </div>
-            </div>
-
-            <div class="history-summary-right">
-              <div class="history-summary-item">
-                <span class="summary-item-label">
-                  <span class="summary-color-dot malicious"></span>
-                  Malicious
-                </span>
-                <span class="summary-item-val" id="hist-count-malicious">0</span>
-              </div>
-              <div class="history-summary-item">
-                <span class="summary-item-label">
-                  <span class="summary-color-dot suspicious"></span>
-                  Suspicious
-                </span>
-                <span class="summary-item-val" id="hist-count-suspicious">0</span>
-              </div>
-              <div class="history-summary-item">
-                <span class="summary-item-label">
-                  <span class="summary-color-dot safe"></span>
-                  Safe
-                </span>
-                <span class="summary-item-val" id="hist-count-safe">0</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Export Button -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <button id="btn-export-history" class="update-outline-btn" style="flex:1;justify-content:center;">
-            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Export CSV
-          </button>
-        </div>
-
-        <!-- Live Protection Dark Card -->
-        <div class="card live-protection-slate" style="margin-bottom: 12px; padding: 14px;">
-          <div class="live-protection-slate-shield">
-            <svg viewBox="0 0 24 24" width="80" height="80" stroke="currentColor" stroke-width="1.5" fill="none">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-          </div>
-          <div class="live-protection-slate-title">Live Protection</div>
-          <div class="live-protection-slate-desc">
-            Advanced Phishing detection is currently active.
-          </div>
-          <button class="manage-shield-btn" id="btn-manage-shield">Manage Shield</button>
-        </div>
-
-        <!-- Past Scans List (populated dynamically) -->
-        <div class="history-list" id="list-past-scans">
-          <div class="card" style="text-align:center;font-size:11px;color:var(--text-sub);">No scan history yet. Scan a page to get started.</div>
-        </div>
-
-
-
       </div>
 
       <!-- ==================== TAB 3: SETTINGS ==================== -->
       <div id="tab-settings" class="tab-content">
-        
-        <div class="settings-title-row">
-          <h2 class="settings-title">Settings</h2>
-          <div class="settings-subtitle">Manage your security preferences and application status.</div>
+        <div class="card">
+          <div class="card-title">Security Settings</div>
+
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+              <div>
+                <div style="font-size:11px;font-weight:600;">Real-time protection</div>
+                <div style="font-size:9px;color:var(--text-sub);">Blocks navigation to dangerous websites before they load</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="toggle-realtime" checked><span class="slider"></span></label>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+              <div>
+                <div style="font-size:11px;font-weight:600;">Deep site scan</div>
+                <div style="font-size:9px;color:var(--text-sub);">Crawl header/footer/robots.txt links for full-site analysis</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="toggle-deep-scan" checked><span class="slider"></span></label>
+            </div>
+
+          </div>
         </div>
 
-        <!-- Security Configuration Section -->
-        <div class="settings-section-header">Security Configuration</div>
-        <div class="settings-list">
-          
-          <div class="settings-item">
-            <div class="settings-item-left">
-              <span class="settings-item-title">Real-time protection</span>
-              <span class="settings-item-desc">Continuous monitoring of active threats</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-realtime" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-item">
-            <div class="settings-item-left">
-              <span class="settings-item-title">Email scanning</span>
-              <span class="settings-item-desc">Detect phishing attempts in your inbox</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-email" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-item">
-            <div class="settings-item-left">
-              <span class="settings-item-title">Desktop notifications</span>
-              <span class="settings-item-desc">Alerts for suspicious activities</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-notifications">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-item">
-            <div class="settings-item-left">
-              <span class="settings-item-title">Data collection analysis</span>
-              <span class="settings-item-desc">Scan pages for data field tracking</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-data-collection" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-item">
-            <div class="settings-item-left">
-              <span class="settings-item-title">Download protection</span>
-              <span class="settings-item-desc">Block risky file downloads (EXE, MSI, scripts, archives)</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-download-protection" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-        </div>
-
-        <!-- Whitelist Section -->
-        <div class="settings-section-header">Trusted Sites (Whitelist)</div>
-        <div class="card" style="margin-bottom: 16px;">
+        <div class="card">
+          <div class="card-title">Trusted Sites</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;">
             <input type="text" id="input-whitelist-domain" placeholder="e.g. google.com" style="flex:1;padding:7px 10px;font-size:10px;border:1px solid var(--border-color);border-radius:6px;outline:none;">
-            <button id="btn-add-whitelist" style="background:var(--blue-active);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;">Add</button>
+            <button id="btn-add-whitelist" style="background:var(--blue-active);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:10px;font-weight:600;cursor:pointer;">Add</button>
           </div>
-          <div id="whitelist-domains" style="font-size:10px;color:var(--text-sub);min-height:20px;">
-            No trusted sites added.
-          </div>
+          <div id="whitelist-domains" style="font-size:10px;color:var(--text-sub);">No trusted sites added.</div>
         </div>
 
-        <!-- Software Details Section -->
-        <div class="settings-section-header">Software Details</div>
-        <div class="settings-list">
-          <div class="settings-item">
-            <div class="settings-item-left">
-              <span class="settings-item-title">Version</span>
-              <span class="settings-item-desc" id="settings-version">2.0.0</span>
-            </div>
-            <button class="update-outline-btn" id="btn-check-updates">
-              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-              </svg>
-              Check for Updates
-            </button>
-          </div>
+        <div class="card">
         </div>
-
-        <!-- Links details list -->
-        <div class="settings-list" style="margin-top: 16px;">
-          <a class="settings-link-item" href="#" id="link-about">
-            <div class="settings-link-left">
-              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-              About Site Sentinel
-            </div>
-            <span class="chevron-right">&gt;</span>
-          </a>
-
-          <a class="settings-link-item" href="#" id="link-false-positive">
-            <div class="settings-link-left">
-              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              Report a False Positive
-            </div>
-            <span class="chevron-right">&gt;</span>
-          </a>
-
-          <a class="settings-link-item" href="#" id="link-privacy">
-            <div class="settings-link-left">
-              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-              Privacy Policy
-            </div>
-            <span class="chevron-right">&gt;</span>
-          </a>
-        </div>
-
-        <div class="reset-link-wrapper">
-          <button class="reset-link-btn" id="btn-reset-factory">Reset to Factory Defaults</button>
-        </div>
-
       </div>
 
     </div>
 
-    <!-- Loading State Overlay -->
+    <!-- Loading Overlay -->
     <div class="loading-overlay hidden" id="scan-loading-overlay">
       <div class="loading-spinner"></div>
-      <div class="loading-step-list">
-        <div class="loading-step active" id="load-step-1">
-          <span class="step-indicator"></span>
-          <span id="load-step-1-label">Capturing page screenshot</span>
-        </div>
-        <div class="loading-step" id="load-step-2">
-          <span class="step-indicator"></span>
-          <span id="load-step-2-label">Running heuristic analysis on telemetry</span>
-        </div>
-        <div class="loading-step" id="load-step-3">
-          <span class="step-indicator"></span>
-          <span id="load-step-3-label">Generating safety verdict</span>
-        </div>
-      </div>
+      <div class="loading-text" id="loading-text">Scanning page...</div>
     </div>
 
-    <!-- Fixed Footer Tab Navigation -->
+    <!-- Footer Navigation -->
     <div class="footer-nav">
       <button class="tab-btn active" data-tab="dashboard">
         <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -2035,7 +807,6 @@
         </svg>
         Dashboard
       </button>
-      
       <button class="tab-btn" data-tab="history">
         <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
@@ -2043,7 +814,6 @@
         </svg>
         History
       </button>
-      
       <button class="tab-btn" data-tab="settings">
         <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
