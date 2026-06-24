@@ -37,10 +37,11 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 USE_GEMINI = bool(GEMINI_API_KEY)
 
 if USE_GEMINI:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
     from prompts import GEMINI_PROMPT_TEMPLATE
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    GEMINI_MODEL = "gemini-2.5-flash"
 
 
 def build_rule_verdict(pre_score, flagged_issues, telemetry):
@@ -104,7 +105,13 @@ def run_gemini_analysis(pre_score, flagged_issues, telemetry):
         telemetry_json=json.dumps(telemetry, indent=2)
     )
 
-    response = gemini_model.generate_content(prompt)
+    response = gemini_client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json"
+        )
+    )
     raw_text = response.text.strip()
 
     if raw_text.startswith("```"):
@@ -148,7 +155,7 @@ async def analyze(request: Request, payload: TelemetryAnalyzePayload):
     vision_verdict = None
     if USE_GEMINI and payload.screenshot:
         try:
-            vision_verdict = analyze_screenshot(payload.screenshot, gemini_model)
+            vision_verdict = analyze_screenshot(payload.screenshot, gemini_client)
         except Exception:
             pass
 
@@ -305,6 +312,81 @@ def get_report(token: str):
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return report
+
+
+@app.post("/classify-domain")
+def classify_domain(payload: dict):
+    domain = payload.get("domain", "")
+    if not domain:
+        return {"should_block": False, "reason": "", "category": "unknown"}
+
+    suspicious_tlds = {'xyz', 'top', 'club', 'gq', 'ml', 'tk', 'cf', 'ga', 'work',
+                       'review', 'loan', 'win', 'bid', 'trade', 'webcam', 'science',
+                       'party', 'racing', 'download', 'stream', 'host', 'site', 'press'}
+    tracker_keywords = ['track', 'analytics', 'metrics', 'pixel', 'beacon',
+                        'adserver', 'adsystem', 'doubleclick', 'adsense',
+                        'facebook.com/tr', 'pinterest.com', 'outbrain',
+                        'taboola', 'criteo', 'rubicon', 'openx']
+    malware_keywords = ['phish', 'malware', 'exploit', 'trojan', 'ransom',
+                        'steal', 'hack', 'crack', 'keylog', 'fake', 'scam',
+                        '0day', 'shell', 'cmd', 'admin', 'wp-admin',
+                        'cgi-bin', 'eval', 'drop', 'payload']
+
+    domain_lower = domain.lower()
+    tld = domain_lower.split('.').pop() if '.' in domain_lower else ''
+    should_block = False
+    reason = ""
+    category = "unknown"
+
+    if USE_GEMINI:
+        try:
+            classify_prompt = f"""You are a web security classifier. Analyze this domain and determine if it should be blocked.
+Domain: {domain}
+
+Respond ONLY with JSON:
+{{
+  "should_block": true/false,
+  "category": "tracking" | "advertising" | "malware" | "phishing" | "safe" | "unknown",
+  "reason": "<brief reason>",
+  "confidence": 0.0-1.0
+}}
+
+Block if it is: a known tracker/analytics service, ad network, malware/phishing host, or data collection endpoint.
+Do NOT block well-known CDNs, frameworks, or legitimate API services unless clearly abusive.
+"""
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=classify_prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type='application/json'
+                )
+            )
+            result = json.loads(response.text.strip())
+            if result.get("should_block") and result.get("confidence", 0) >= 0.6:
+                return result
+        except Exception:
+            pass
+
+    if tld in suspicious_tlds:
+        should_block = True
+        reason = f"Suspicious TLD: .{tld}"
+        category = "malware"
+
+    for kw in tracker_keywords:
+        if kw in domain_lower:
+            should_block = True
+            reason = f"Tracker keyword: {kw}"
+            category = "tracking"
+            break
+
+    for kw in malware_keywords:
+        if kw in domain_lower:
+            should_block = True
+            reason = f"Threat keyword: {kw}"
+            category = "malware"
+            break
+
+    return {"should_block": should_block, "reason": reason, "category": category, "confidence": 0.9 if should_block else 0.0}
 
 
 @app.get("/domain/{domain}")

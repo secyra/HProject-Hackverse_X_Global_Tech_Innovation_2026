@@ -27,7 +27,9 @@
   "permissions": [
     "tabs",
     "storage",
-    "webRequest"
+    "webRequest",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback"
   ],
   "host_permissions": [
     "*://*/*"

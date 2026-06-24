@@ -1,6 +1,7 @@
 import base64
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 VISION_PROMPT = """You are a phishing detection expert analyzing a screenshot of a webpage.
 
@@ -44,15 +45,21 @@ Respond ONLY with valid JSON (no markdown, no extra text):
 """
 
 
-def analyze_screenshot(screenshot_base64: str, model: genai.GenerativeModel) -> dict | None:
+def analyze_screenshot(screenshot_base64: str, client: genai.Client) -> dict | None:
     if not screenshot_base64:
         return None
 
     try:
         image_data = base64.b64decode(screenshot_base64)
-        image = {"mime_type": "image/png", "data": image_data}
+        image_part = types.Part.from_bytes(data=image_data, mime_type="image/png")
 
-        response = model.generate_content([VISION_PROMPT, image])
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[VISION_PROMPT, image_part],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
         raw_text = response.text.strip()
 
         if raw_text.startswith("```"):

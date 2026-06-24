@@ -1,828 +1,1160 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://127.0.0.1:8000; img-src 'self' data:; script-src 'self';">
-    <title>Site Sentinel</title>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-      :root {
-        --blue-active: #2563eb;
-        --blue-light: #eff6ff;
-        --blue-text: #1e40af;
-        --red-bg: #fee2e2;
-        --red-text: #991b1b;
-        --orange-bg: #ffedd5;
-        --orange-text: #9a3412;
-        --yellow-bg: #fef3c7;
-        --yellow-text: #b45309;
-        --gray-bg: #f3f4f6;
-        --gray-text: #4b5563;
-        --text-main: #111827;
-        --text-sub: #64748b;
-        --border-color: #e2e8f0;
-        --card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://127.0.0.1:8000; img-src 'self' data:; script-src 'self';">
+  <title>Site Sentinel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --safe: #059669;
+      --safe-bg: #ecfdf5;
+      --safe-text: #065f46;
+      --suspicious: #d97706;
+      --suspicious-bg: #fffbeb;
+      --suspicious-text: #92400e;
+      --dangerous: #dc2626;
+      --dangerous-bg: #fef2f2;
+      --dangerous-text: #991b1b;
+      --accent: #2563eb;
+      --accent-bg: #eff6ff;
+      --accent-text: #1e40af;
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --text-tertiary: #94a3b8;
+      --border: #e2e8f0;
+      --border-light: #f1f5f9;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 360px;
+      height: 600px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-shield {
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, var(--accent), #1d4ed8);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .logo-shield svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+    }
+
+    .logo-text {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+
+    .content-viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      padding-bottom: 72px;
+    }
+
+    .content-viewport::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .content-viewport::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .content-viewport::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .landing-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 40px 24px;
+      margin-top: 20px;
+    }
+
+    .landing-shield {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--accent-bg), #dbeafe);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+
+    .landing-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .landing-domain {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-bottom: 20px;
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    .scan-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 13px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .scan-btn:hover {
+      opacity: 0.92;
+      transform: translateY(-0.5px);
+    }
+
+    .scan-btn:active {
+      transform: translateY(0);
+      opacity: 0.85;
+    }
+
+    .scan-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .verdict-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .verdict-badge.safe {
+      background: var(--safe-bg);
+      color: var(--safe-text);
+    }
+
+    .verdict-badge.suspicious {
+      background: var(--suspicious-bg);
+      color: var(--suspicious-text);
+    }
+
+    .verdict-badge.dangerous {
+      background: var(--dangerous-bg);
+      color: var(--dangerous-text);
+    }
+
+    .verdict-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .verdict-desc {
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .score-number {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+      letter-spacing: -0.5px;
+      min-width: 48px;
+    }
+
+    .score-label {
+      font-size: 9px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      min-width: 52px;
+      line-height: 1.2;
+    }
+
+    .progress-bar-container {
+      flex: 1;
+      height: 5px;
+      background: #f1f5f9;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s ease-out;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .risk-factors {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .risk-factor {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      background: #fafafa;
+    }
+
+    .risk-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px transparent;
+    }
+
+    .risk-dot.critical {
+      background: var(--dangerous);
+      box-shadow: 0 0 0 2px #fef2f2;
+    }
+
+    .risk-dot.warning {
+      background: var(--suspicious);
+      box-shadow: 0 0 0 2px #fffbeb;
+    }
+
+    .risk-dot.minor {
+      background: var(--text-tertiary);
+      box-shadow: 0 0 0 2px #f8fafc;
+    }
+
+    .deep-page {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .deep-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 9px;
+      background: #fafafa;
+    }
+
+    .deep-page-path {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .deep-page-score {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .deep-page-details {
+      padding: 7px 9px;
+      font-size: 9px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .evidence-card {
+      margin-bottom: 6px;
+    }
+
+    .evidence-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 7px 0;
+      user-select: none;
+      transition: opacity 0.15s;
+    }
+
+    .evidence-header:hover {
+      opacity: 0.75;
+    }
+
+    .evidence-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .evidence-chevron {
+      color: var(--text-tertiary);
+      font-size: 8px;
+      transition: transform 0.2s;
+    }
+
+    .evidence-chevron.open {
+      transform: rotate(90deg);
+    }
+
+    .evidence-content {
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      padding-top: 4px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .evidence-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+
+    .stat-item {
+      background: #fafafa;
+      border-radius: var(--radius-sm);
+      padding: 9px;
+      text-align: center;
+      border: 1px solid var(--border-light);
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+      letter-spacing: -0.3px;
+    }
+
+    .stat-label {
+      font-size: 8px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .tag {
+      font-size: 8px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin: 1px;
+    }
+
+    .tag.red {
+      background: var(--dangerous-bg);
+      color: var(--dangerous-text);
+    }
+
+    .tag.amber {
+      background: var(--suspicious-bg);
+      color: var(--suspicious-text);
+    }
+
+    .tag.green {
+      background: var(--safe-bg);
+      color: var(--safe-text);
+    }
+
+    .tag.blue {
+      background: var(--accent-bg);
+      color: var(--accent-text);
+    }
+
+    .tag.gray {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
       }
 
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-
-      body {
-        width: 360px;
-        height: 600px;
-        font-family: 'Inter', -apple-system, sans-serif;
-        background-color: #f8fafc;
-        color: var(--text-main);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        position: relative;
+      100% {
+        transform: rotate(360deg);
       }
+    }
 
-      .header {
-        height: 52px;
-        background-color: #ffffff;
-        border-bottom: 1px solid var(--border-color);
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-shrink: 0;
-        z-index: 10;
-      }
+    .loading-text {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
 
-      .header-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+    .footer-nav {
+      height: 56px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      padding: 0 8px;
+      z-index: 100;
+    }
 
-      .logo-text {
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: -0.3px;
-        color: var(--text-main);
-      }
+    .tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 64px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 8.5px;
+      font-weight: 500;
+      background: none;
+      border: none;
+    }
 
-      .content-viewport {
-        flex: 1;
-        overflow-y: auto;
-        padding: 16px;
-        padding-bottom: 80px;
-      }
+    .tab-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
 
-      .content-viewport::-webkit-scrollbar { width: 4px; }
-      .content-viewport::-webkit-scrollbar-track { background: transparent; }
-      .content-viewport::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .tab-btn.active {
+      background: var(--accent-bg);
+      color: var(--accent);
+      font-weight: 600;
+    }
 
-      .tab-content { display: none; }
-      .tab-content.active { display: block; }
+    .tab-btn:not(.active):hover {
+      color: var(--text-secondary);
+      background: #f8fafc;
+    }
 
-      .card {
-        background-color: #ffffff;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: var(--card-shadow);
-      }
+    #btn-rescan {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s, transform 0.15s;
+    }
 
-      .card-title {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--text-sub);
-        margin-bottom: 12px;
-      }
+    #btn-rescan:hover {
+      opacity: 0.9;
+      transform: translateY(-0.5px);
+    }
 
-      .hidden { display: none !important; }
+    #btn-rescan:active {
+      transform: translateY(0);
+      opacity: 0.8;
+    }
 
-      .landing-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 32px 20px;
-      }
+    .credentials-card {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: var(--radius-sm);
+      padding: 9px;
+      margin-bottom: 6px;
+    }
 
-      .landing-shield {
-        width: 56px;
-        height: 56px;
-        background: var(--blue-light);
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 16px;
-        color: var(--blue-active);
-      }
+    .credentials-card.secure {
+      background: var(--safe-bg);
+      border-color: #bbf7d0;
+    }
 
-      .landing-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 4px;
-      }
+    .credentials-card.danger {
+      background: var(--dangerous-bg);
+      border-color: #fecaca;
+    }
 
-      .landing-domain {
-        font-size: 12px;
-        color: var(--text-sub);
-        margin-bottom: 20px;
-        word-break: break-all;
-      }
+    .cred-title {
+      font-size: 9px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
 
-      .scan-btn {
-        width: 100%;
-        background-color: #111827;
-        color: #ffffff;
-        border: none;
-        border-radius: 12px;
-        padding: 14px;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: background-color 0.2s;
-      }
+    .cred-detail {
+      font-size: 9px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
 
-      .scan-btn:hover { background-color: #1f2937; }
-      .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .perm-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 9px;
+    }
 
-      .verdict-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 10px;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 20px;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
+    .smart-tip-card {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #ffffff;
+      border: none;
+    }
 
-      .verdict-badge.safe { background: var(--blue-light); color: var(--blue-text); }
-      .verdict-badge.suspicious { background: var(--yellow-bg); color: var(--yellow-text); }
-      .verdict-badge.dangerous { background: var(--red-bg); color: var(--red-text); }
+    .smart-tip-header {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 8px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
 
-      .verdict-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-main);
-        line-height: 1.25;
-        margin-bottom: 8px;
-      }
+    .smart-tip-desc {
+      font-size: 9px;
+      line-height: 1.6;
+      color: #94a3b8;
+    }
 
-      .verdict-desc {
-        font-size: 11px;
-        color: var(--text-sub);
-        line-height: 1.45;
-        margin-bottom: 16px;
-      }
+    .vision-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
 
-      .score-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
+    .vision-analysis-line {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding: 7px 9px;
+      background: #fafafa;
+      border-radius: var(--radius-sm);
+      margin-bottom: 3px;
+      line-height: 1.5;
+    }
 
-      .score-number {
-        font-size: 28px;
-        font-weight: 800;
-        color: var(--text-main);
-        line-height: 1;
-      }
+    .vision-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 9px;
+    }
 
-      .progress-bar-container {
-        flex: 1;
-        height: 6px;
-        background-color: #f1f5f9;
-        border-radius: 3px;
-        overflow: hidden;
-      }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 18px;
+    }
 
-      .progress-bar-fill {
-        height: 100%;
-        border-radius: 3px;
-        transition: width 0.8s ease-out;
-      }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
 
-      .risk-factors {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #cbd5e1;
+      border-radius: 18px;
+      transition: background 0.25s;
+    }
 
-      .risk-factor {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        font-size: 10px;
-        color: var(--text-sub);
-        line-height: 1.4;
-      }
+    .slider::before {
+      content: '';
+      position: absolute;
+      height: 14px; width: 14px;
+      left: 2px; bottom: 2px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.25s;
+    }
 
-      .risk-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        margin-top: 4px;
-        flex-shrink: 0;
-      }
+    .switch input:checked + .slider {
+      background: var(--accent);
+    }
 
-      .risk-dot.critical { background: #dc2626; }
-      .risk-dot.warning { background: #f59e0b; }
-      .risk-dot.minor { background: #9ca3af; }
+    .switch input:checked + .slider::before {
+      transform: translateX(14px);
+    }
 
-      .section-title {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border-color);
-      }
+    .vision-item.danger {
+      background: var(--dangerous-bg);
+      color: var(--dangerous-text);
+    }
 
-      .deep-page {
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        margin-bottom: 8px;
-        overflow: hidden;
-      }
+    .vision-item.warning {
+      background: var(--suspicious-bg);
+      color: var(--suspicious-text);
+    }
 
-      .deep-page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 10px;
-        background: #f9fafb;
-      }
+    .vision-label {
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 70px;
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+  </style>
+</head>
 
-      .deep-page-path {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--text-main);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+<body>
 
-      .deep-page-score {
-        font-size: 9px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 4px;
-        flex-shrink: 0;
-      }
-
-      .deep-page-details {
-        padding: 8px 10px;
-        font-size: 9px;
-        color: var(--text-sub);
-        line-height: 1.6;
-        border-top: 1px solid #f1f5f9;
-      }
-
-      .evidence-card {
-        margin-bottom: 8px;
-      }
-
-      .evidence-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-        padding: 8px 0;
-        user-select: none;
-      }
-
-      .evidence-header:hover { opacity: 0.8; }
-
-      .evidence-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-main);
-      }
-
-      .evidence-chevron {
-        color: #9ca3af;
-        transition: transform 0.2s;
-      }
-
-      .evidence-chevron.open { transform: rotate(90deg); }
-
-      .evidence-content {
-        font-size: 10px;
-        color: var(--text-sub);
-        line-height: 1.6;
-      }
-
-      .evidence-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 4px 0;
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      .stat-item {
-        background: #f9fafb;
-        border-radius: 8px;
-        padding: 10px;
-        text-align: center;
-      }
-
-      .stat-value {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-main);
-        line-height: 1.2;
-      }
-
-      .stat-label {
-        font-size: 9px;
-        color: var(--text-sub);
-        margin-top: 2px;
-      }
-
-      .tag {
-        font-size: 9px;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 4px;
-        display: inline-block;
-        margin: 1px;
-      }
-
-      .tag.red { background: #fee2e2; color: #991b1b; }
-      .tag.amber { background: #fef3c7; color: #92400e; }
-      .tag.green { background: #dcfce7; color: #166534; }
-      .tag.blue { background: #dbeafe; color: #1e40af; }
-      .tag.gray { background: #f3f4f6; color: #4b5563; }
-
-      .loading-overlay {
-        position: absolute;
-        top: 52px; left: 0; right: 0; bottom: 0;
-        background-color: rgba(255,255,255,0.95);
-        z-index: 50;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 32px;
-      }
-
-      .loading-spinner {
-        width: 36px;
-        height: 36px;
-        border: 3px solid var(--border-color);
-        border-top: 3px solid var(--blue-active);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 20px;
-      }
-
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
-      .loading-text {
-        font-size: 11px;
-        color: var(--text-sub);
-        font-weight: 500;
-      }
-
-      .footer-nav {
-        height: 64px;
-        background-color: #ffffff;
-        border-top: 1px solid var(--border-color);
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-around;
-        padding: 0 10px;
-        z-index: 100;
-      }
-
-      .tab-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 3px;
-        width: 72px;
-        height: 48px;
-        border-radius: 8px;
-        color: var(--text-sub);
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 9.5px;
-        font-weight: 500;
-        background: none;
-        border: none;
-      }
-
-      .tab-btn svg {
-        width: 20px;
-        height: 20px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 2;
-      }
-
-      .tab-btn.active { background-color: var(--blue-active); color: #ffffff; }
-
-      .credentials-card {
-        background: #fff7ed;
-        border: 1px solid #fed7aa;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 8px;
-      }
-
-      .credentials-card.secure { background: #f0fdf4; border-color: #bbf7d0; }
-      .credentials-card.danger { background: #fef2f2; border-color: #fecaca; }
-
-      .cred-title {
-        font-size: 10px;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-
-      .cred-detail {
-        font-size: 9px;
-        color: var(--text-sub);
-        line-height: 1.5;
-      }
-
-      .perm-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 3px 0;
-        font-size: 10px;
-      }
-
-      .smart-tip-card { background: #09090b; color: #ffffff; border: none; }
-      .smart-tip-header {
-        display: flex; align-items: center; gap: 6px;
-        font-size: 9px; font-weight: 700; color: #38bdf8;
-        letter-spacing: 0.5px; margin-bottom: 8px;
-      }
-      .smart-tip-desc { font-size: 10px; line-height: 1.5; color: #cbd5e1; }
-
-      .vision-grid { display: flex; flex-direction: column; gap: 6px; }
-      .vision-analysis-line {
-        font-size: 11px; font-weight: 600; color: var(--text-main);
-        padding: 8px; background: #f9fafb; border-radius: 6px;
-        margin-bottom: 4px; line-height: 1.5;
-      }
-      .vision-item {
-        display: flex; align-items: flex-start; gap: 8px;
-        padding: 6px 8px; border-radius: 6px; font-size: 10px;
-      }
-      .vision-item.danger { background: #fef2f2; color: #991b1b; }
-      .vision-item.warning { background: #fffbeb; color: #92400e; }
-      .vision-label {
-        font-weight: 700; white-space: nowrap; flex-shrink: 0;
-        min-width: 80px; font-size: 9px; text-transform: uppercase;
-        letter-spacing: 0.3px;
-      }
-    </style>
-  </head>
-  <body>
-
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-shield">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
-        <span class="logo-text">Site Sentinel</span>
       </div>
+      <span class="logo-text">Site Sentinel</span>
     </div>
+  </div>
 
-    <!-- Content -->
-    <div class="content-viewport" id="main-viewport">
+  <!-- Content -->
+  <div class="content-viewport" id="main-viewport">
 
-      <!-- ==================== TAB 1: DASHBOARD ==================== -->
-      <div id="tab-dashboard" class="tab-content active">
+    <!-- ==================== TAB 1: DASHBOARD ==================== -->
+    <div id="tab-dashboard" class="tab-content active">
 
-        <!-- STATE A: PRE-SCAN LANDING -->
-        <div id="state-landing">
-          <div class="card landing-card">
-            <div class="landing-shield">
-              <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- SHIELD STATUS BAR -->
+      <div class="card" id="shield-bar" style="padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+        <div id="shield-icon" style="width:32px;height:32px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+            <span>Shield</span>
+            <span id="shield-status" style="font-size:8px;font-weight:600;padding:1px 6px;border-radius:4px;background:#dcfce7;color:#166534;">Active</span>
+          </div>
+          <div style="font-size:9px;color:var(--text-secondary);margin-top:1px;">
+            <span id="shield-blocked-count">0</span> requests blocked on this page
+          </div>
+        </div>
+        <label class="switch" style="flex-shrink:0;">
+          <input type="checkbox" id="toggle-shield" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- STATE A: PRE-SCAN LANDING -->
+      <div id="state-landing">
+        <div class="card landing-card">
+          <div class="landing-shield">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <div class="landing-title">Ready to Scan</div>
+          <div class="landing-domain" id="landing-domain">Loading...</div>
+          <button class="scan-btn" id="btn-start-scan">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Scan Now
+          </button>
+        </div>
+      </div>
+
+      <!-- STATE B: POST-SCAN RESULTS -->
+      <div id="state-results" class="hidden">
+
+        <!-- Verdict Card -->
+        <div class="card" id="results-verdict">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div id="verdict-badge" class="verdict-badge safe">Safe</div>
+              <div class="verdict-title" id="verdict-title">This site appears safe</div>
+            </div>
+            <button id="btn-rescan">Scan Again</button>
+          </div>
+          <div class="verdict-desc" id="verdict-desc">No significant threats detected.</div>
+
+          <div class="score-row">
+            <span class="score-number" id="verdict-score">--</span>
+            <span style="font-size:10px;color:var(--text-sub);font-weight:500;">Safety Score</span>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="verdict-score-fill" style="width:0%;"></div>
+            </div>
+          </div>
+
+          <div id="verdict-url"
+            style="font-size:9px;color:var(--text-sub);word-break:break-all;margin-bottom:12px;padding:6px 8px;background:#f9fafb;border-radius:6px;">
+          </div>
+        </div>
+
+        <!-- Plain English Risk Briefing -->
+        <div id="plain-english-briefing" class="hidden">
+          <div class="card" style="background:#f0fdf4;border-color:#bbf7d0;border-left:3px solid #22c55e;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="#22c55e" stroke-width="2.5" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
+              <span
+                style="font-size:10px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.5px;">What
+                This Means For You</span>
             </div>
-            <div class="landing-title">Ready to Scan</div>
-            <div class="landing-domain" id="landing-domain">Loading...</div>
-            <button class="scan-btn" id="btn-start-scan">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              Scan Now
-            </button>
+            <div id="briefing-text" style="font-size:12px;line-height:1.6;color:#065f46;font-weight:500;"></div>
           </div>
         </div>
 
-        <!-- STATE B: POST-SCAN RESULTS -->
-        <div id="state-results" class="hidden">
-
-          <!-- Verdict Card -->
-          <div class="card" id="results-verdict">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-              <div>
-                <div id="verdict-badge" class="verdict-badge safe">Safe</div>
-                <div class="verdict-title" id="verdict-title">This site appears safe</div>
-              </div>
-              <button id="btn-rescan" style="background:var(--blue-active);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;">Scan Again</button>
-            </div>
-            <div class="verdict-desc" id="verdict-desc">No significant threats detected.</div>
-
-            <div class="score-row">
-              <span class="score-number" id="verdict-score">--</span>
-              <span style="font-size:10px;color:var(--text-sub);font-weight:500;">Safety Score</span>
-              <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="verdict-score-fill" style="width:0%;"></div>
-              </div>
-            </div>
-
-            <div id="verdict-url" style="font-size:9px;color:var(--text-sub);word-break:break-all;margin-bottom:12px;padding:6px 8px;background:#f9fafb;border-radius:6px;"></div>
-          </div>
-
-          <!-- Plain English Risk Briefing -->
-          <div id="plain-english-briefing" class="hidden">
-            <div class="card" style="background:#f0fdf4;border-color:#bbf7d0;border-left:3px solid #22c55e;">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        <!-- Vision Analysis -->
+        <div id="section-vision-analysis" class="hidden">
+          <div class="card">
+            <div class="section-title">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                <span style="font-size:10px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.5px;">What This Means For You</span>
+                Visual Threat Analysis
               </div>
-              <div id="briefing-text" style="font-size:12px;line-height:1.6;color:#065f46;font-weight:500;"></div>
             </div>
-          </div>
-
-          <!-- Vision Analysis -->
-          <div id="section-vision-analysis" class="hidden">
-            <div class="card">
-              <div class="section-title">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  Visual Threat Analysis
-                </div>
-              </div>
-              <div id="vision-content" style="font-size:10px;color:var(--text-sub);"></div>
-            </div>
-          </div>
-
-          <!-- Risk Factors -->
-          <div id="section-risk-factors" class="hidden">
-            <div class="card">
-              <div class="section-title">Risk Factors</div>
-              <div class="risk-factors" id="risk-factors-list"></div>
-            </div>
-          </div>
-
-          <!-- Deep Scan Results -->
-          <div id="section-deep-scan" class="hidden">
-            <div class="card">
-              <div class="section-title">Site-wide Scan</div>
-              <div id="deep-scan-summary" style="font-size:10px;color:var(--text-sub);margin-bottom:8px;"></div>
-              <div id="deep-scan-pages"></div>
-            </div>
-          </div>
-
-          <!-- Credential Form Analysis -->
-          <div id="section-credentials" class="hidden">
-            <div class="card">
-              <div class="section-title">Form Security Analysis</div>
-              <div id="credential-content"></div>
-            </div>
-          </div>
-
-          <!-- Quick Stats -->
-          <div class="stats-grid" id="section-stats">
-            <div class="stat-item">
-              <div class="stat-value" id="stat-links">0</div>
-              <div class="stat-label">External Links</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="stat-trackers">0</div>
-              <div class="stat-label">Trackers</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="stat-forms">0</div>
-              <div class="stat-label">Forms</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="stat-scripts">0</div>
-              <div class="stat-label">Scripts</div>
-            </div>
-          </div>
-
-          <!-- Expandable Evidence Sections -->
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-network">
-              <span class="evidence-title">Network Telemetry</span>
-              <span class="evidence-chevron" id="chevron-network">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-network">
-              <div class="evidence-row"><span>Third-party requests</span><span id="net-requests" style="font-weight:700;">0</span></div>
-              <div class="evidence-row"><span>Third-party domains</span><span id="net-domains" style="font-weight:700;">0</span></div>
-              <div class="evidence-row"><span>Tracking scripts</span><span id="net-tracking" style="font-weight:700;">0</span></div>
-              <div class="evidence-row"><span>Analytics scripts</span><span id="net-analytics" style="font-weight:700;">0</span></div>
-              <div class="evidence-row"><span>Advertising scripts</span><span id="net-ads" style="font-weight:700;">0</span></div>
-            </div>
-          </div>
-
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-security">
-              <span class="evidence-title">Security &amp; Privacy</span>
-              <span class="evidence-chevron" id="chevron-security">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-security">
-              <div class="evidence-row"><span>HTTPS</span><span id="sec-https" style="font-weight:700;">--</span></div>
-              <div class="evidence-row"><span>Content-Security-Policy</span><span id="sec-csp" style="font-weight:700;">--</span></div>
-              <div class="evidence-row"><span>X-Frame-Options</span><span id="sec-xframe" style="font-weight:700;">--</span></div>
-              <div class="evidence-row"><span>Privacy Policy</span><span id="sec-privacy" style="font-weight:700;">--</span></div>
-              <div class="evidence-row"><span>Terms &amp; Conditions</span><span id="sec-terms" style="font-weight:700;">--</span></div>
-              <div class="evidence-row"><span>Contact Page</span><span id="sec-contact" style="font-weight:700;">--</span></div>
-            </div>
-          </div>
-
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-permissions">
-              <span class="evidence-title">Browser Permissions</span>
-              <span class="evidence-chevron" id="chevron-permissions">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-permissions">
-              <div class="perm-item"><span>Geolocation</span><span id="perm-geo" style="font-weight:700;">--</span></div>
-              <div class="perm-item"><span>Notifications</span><span id="perm-notif" style="font-weight:700;">--</span></div>
-              <div class="perm-item"><span>Camera</span><span id="perm-camera" style="font-weight:700;">--</span></div>
-              <div class="perm-item"><span>Microphone</span><span id="perm-mic" style="font-weight:700;">--</span></div>
-            </div>
-          </div>
-
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-hidden">
-              <span class="evidence-title">Hidden Elements</span>
-              <span class="evidence-chevron" id="chevron-hidden">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-hidden">
-              <div class="evidence-row"><span>Hidden/tiny iframes</span><span id="he-iframes" style="font-weight:700;">0</span></div>
-              <div class="evidence-row"><span>Hidden input fields</span><span id="he-inputs" style="font-weight:700;">0</span></div>
-              <div class="evidence-row"><span>Invisible elements with content</span><span id="he-invisible" style="font-weight:700;">0</span></div>
-            </div>
-          </div>
-
-          <!-- External Link Destinations -->
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-ext-links">
-              <span class="evidence-title">External Link Destinations</span>
-              <span class="evidence-chevron" id="chevron-ext-links">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-ext-links">
-              <div id="ext-links-list"></div>
-            </div>
-          </div>
-
-          <!-- Suspicious External Links -->
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-suspicious-links">
-              <span class="evidence-title">Suspicious External Links</span>
-              <span class="evidence-chevron" id="chevron-suspicious-links">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-suspicious-links">
-              <div id="suspicious-links-list">None detected</div>
-            </div>
-          </div>
-
-          <!-- Tracker Ranking -->
-          <div class="card evidence-card">
-            <div class="evidence-header" data-target="evidence-tracker-ranking">
-              <span class="evidence-title">Tracker Ranking</span>
-              <span class="evidence-chevron" id="chevron-tracker-ranking">&#9654;</span>
-            </div>
-            <div class="evidence-content hidden" id="evidence-tracker-ranking">
-              <div id="tracker-ranking-list"></div>
-            </div>
-          </div>
-
-          <!-- Security Tip -->
-          <div class="card smart-tip-card" style="margin-top: 12px;">
-            <div class="smart-tip-header">
-              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-              SECURITY TIP
-            </div>
-            <div class="smart-tip-desc" id="security-tip-text">Scan this page to get a personalized security tip.</div>
-          </div>
-
-
-
-        </div>
-
-      </div>
-
-      <!-- ==================== TAB 2: HISTORY ==================== -->
-      <div id="tab-history" class="tab-content">
-        <div class="card" style="text-align:center;padding:24px;">
-          <div style="font-size:10px;color:var(--text-sub);">Scan history will appear here after scanning pages.</div>
-        </div>
-      </div>
-
-      <!-- ==================== TAB 3: SETTINGS ==================== -->
-      <div id="tab-settings" class="tab-content">
-        <div class="card">
-          <div class="card-title">Security Settings</div>
-
-          <div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
-              <div>
-                <div style="font-size:11px;font-weight:600;">Real-time protection</div>
-                <div style="font-size:9px;color:var(--text-sub);">Blocks navigation to dangerous websites before they load</div>
-              </div>
-              <label class="switch"><input type="checkbox" id="toggle-realtime" checked><span class="slider"></span></label>
-            </div>
-
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
-              <div>
-                <div style="font-size:11px;font-weight:600;">Deep site scan</div>
-                <div style="font-size:9px;color:var(--text-sub);">Crawl header/footer/robots.txt links for full-site analysis</div>
-              </div>
-              <label class="switch"><input type="checkbox" id="toggle-deep-scan" checked><span class="slider"></span></label>
-            </div>
-
+            <div id="vision-content" style="font-size:10px;color:var(--text-sub);"></div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-title">Trusted Sites</div>
-          <div style="display:flex;gap:6px;margin-bottom:8px;">
-            <input type="text" id="input-whitelist-domain" placeholder="e.g. google.com" style="flex:1;padding:7px 10px;font-size:10px;border:1px solid var(--border-color);border-radius:6px;outline:none;">
-            <button id="btn-add-whitelist" style="background:var(--blue-active);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:10px;font-weight:600;cursor:pointer;">Add</button>
+        <!-- Risk Factors -->
+        <div id="section-risk-factors" class="hidden">
+          <div class="card">
+            <div class="section-title">Risk Factors</div>
+            <div class="risk-factors" id="risk-factors-list"></div>
           </div>
-          <div id="whitelist-domains" style="font-size:10px;color:var(--text-sub);">No trusted sites added.</div>
         </div>
 
-        <div class="card">
+        <!-- Deep Scan Results -->
+        <div id="section-deep-scan" class="hidden">
+          <div class="card">
+            <div class="section-title">Site-wide Scan</div>
+            <div id="deep-scan-summary" style="font-size:10px;color:var(--text-sub);margin-bottom:8px;"></div>
+            <div id="deep-scan-pages"></div>
+          </div>
         </div>
+
+        <!-- Credential Form Analysis -->
+        <div id="section-credentials" class="hidden">
+          <div class="card">
+            <div class="section-title">Form Security Analysis</div>
+            <div id="credential-content"></div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid" id="section-stats">
+          <div class="stat-item">
+            <div class="stat-value" id="stat-links">0</div>
+            <div class="stat-label">External Links</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-trackers">0</div>
+            <div class="stat-label">Trackers</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-forms">0</div>
+            <div class="stat-label">Forms</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-scripts">0</div>
+            <div class="stat-label">Scripts</div>
+          </div>
+        </div>
+
+        <!-- Expandable Evidence Sections -->
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-network">
+            <span class="evidence-title">Network Telemetry</span>
+            <span class="evidence-chevron" id="chevron-network">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-network">
+            <div class="evidence-row"><span>Third-party requests</span><span id="net-requests"
+                style="font-weight:700;">0</span></div>
+            <div class="evidence-row"><span>Third-party domains</span><span id="net-domains"
+                style="font-weight:700;">0</span></div>
+            <div class="evidence-row"><span>Tracking scripts</span><span id="net-tracking"
+                style="font-weight:700;">0</span></div>
+            <div class="evidence-row"><span>Analytics scripts</span><span id="net-analytics"
+                style="font-weight:700;">0</span></div>
+            <div class="evidence-row"><span>Advertising scripts</span><span id="net-ads"
+                style="font-weight:700;">0</span></div>
+          </div>
+        </div>
+
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-security">
+            <span class="evidence-title">Security &amp; Privacy</span>
+            <span class="evidence-chevron" id="chevron-security">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-security">
+            <div class="evidence-row"><span>HTTPS</span><span id="sec-https" style="font-weight:700;">--</span></div>
+            <div class="evidence-row"><span>Content-Security-Policy</span><span id="sec-csp"
+                style="font-weight:700;">--</span></div>
+            <div class="evidence-row"><span>X-Frame-Options</span><span id="sec-xframe"
+                style="font-weight:700;">--</span></div>
+            <div class="evidence-row"><span>Privacy Policy</span><span id="sec-privacy"
+                style="font-weight:700;">--</span></div>
+            <div class="evidence-row"><span>Terms &amp; Conditions</span><span id="sec-terms"
+                style="font-weight:700;">--</span></div>
+            <div class="evidence-row"><span>Contact Page</span><span id="sec-contact" style="font-weight:700;">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-permissions">
+            <span class="evidence-title">Browser Permissions</span>
+            <span class="evidence-chevron" id="chevron-permissions">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-permissions">
+            <div class="perm-item"><span>Geolocation</span><span id="perm-geo" style="font-weight:700;">--</span></div>
+            <div class="perm-item"><span>Notifications</span><span id="perm-notif" style="font-weight:700;">--</span>
+            </div>
+            <div class="perm-item"><span>Camera</span><span id="perm-camera" style="font-weight:700;">--</span></div>
+            <div class="perm-item"><span>Microphone</span><span id="perm-mic" style="font-weight:700;">--</span></div>
+          </div>
+        </div>
+
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-hidden">
+            <span class="evidence-title">Hidden Elements</span>
+            <span class="evidence-chevron" id="chevron-hidden">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-hidden">
+            <div class="evidence-row"><span>Hidden/tiny iframes</span><span id="he-iframes"
+                style="font-weight:700;">0</span></div>
+            <div class="evidence-row"><span>Hidden input fields</span><span id="he-inputs"
+                style="font-weight:700;">0</span></div>
+            <div class="evidence-row"><span>Invisible elements with content</span><span id="he-invisible"
+                style="font-weight:700;">0</span></div>
+          </div>
+        </div>
+
+        <!-- External Link Destinations -->
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-ext-links">
+            <span class="evidence-title">External Link Destinations</span>
+            <span class="evidence-chevron" id="chevron-ext-links">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-ext-links">
+            <div id="ext-links-list"></div>
+          </div>
+        </div>
+
+        <!-- Suspicious External Links -->
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-suspicious-links">
+            <span class="evidence-title">Suspicious External Links</span>
+            <span class="evidence-chevron" id="chevron-suspicious-links">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-suspicious-links">
+            <div id="suspicious-links-list">None detected</div>
+          </div>
+        </div>
+
+        <!-- Tracker Ranking -->
+        <div class="card evidence-card">
+          <div class="evidence-header" data-target="evidence-tracker-ranking">
+            <span class="evidence-title">Tracker Ranking</span>
+            <span class="evidence-chevron" id="chevron-tracker-ranking">&#9654;</span>
+          </div>
+          <div class="evidence-content hidden" id="evidence-tracker-ranking">
+            <div id="tracker-ranking-list"></div>
+          </div>
+        </div>
+
+        <!-- Security Tip -->
+        <div class="card smart-tip-card" style="margin-top: 12px;">
+          <div class="smart-tip-header">
+            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            SECURITY TIP
+          </div>
+          <div class="smart-tip-desc" id="security-tip-text">Scan this page to get a personalized security tip.</div>
+        </div>
+
+
+
       </div>
 
     </div>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay hidden" id="scan-loading-overlay">
-      <div class="loading-spinner"></div>
-      <div class="loading-text" id="loading-text">Scanning page...</div>
+    <!-- ==================== TAB 2: HISTORY ==================== -->
+    <div id="tab-history" class="tab-content">
+      <div class="card" style="text-align:center;padding:24px;">
+        <div style="font-size:10px;color:var(--text-sub);">Scan history will appear here after scanning pages.</div>
+      </div>
     </div>
 
-    <!-- Footer Navigation -->
-    <div class="footer-nav">
-      <button class="tab-btn active" data-tab="dashboard">
-        <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7"></rect>
-          <rect x="14" y="3" width="7" height="7"></rect>
-          <rect x="14" y="14" width="7" height="7"></rect>
-          <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-        Dashboard
-      </button>
-      <button class="tab-btn" data-tab="history">
-        <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        History
-      </button>
-      <button class="tab-btn" data-tab="settings">
-        <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-        Settings
-      </button>
+    <!-- ==================== TAB 3: SETTINGS ==================== -->
+    <div id="tab-settings" class="tab-content">
+      <div class="card">
+        <div class="card-title">Security Settings</div>
+
+        <div style="margin-bottom:12px;">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+            <div>
+              <div style="font-size:11px;font-weight:600;">Real-time protection</div>
+              <div style="font-size:9px;color:var(--text-sub);">Blocks navigation to dangerous websites before they load
+              </div>
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-realtime" checked><span
+                class="slider"></span></label>
+          </div>
+
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+            <div>
+              <div style="font-size:11px;font-weight:600;">Deep site scan</div>
+              <div style="font-size:9px;color:var(--text-sub);">Crawl header/footer/robots.txt links for full-site
+                analysis</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-deep-scan" checked><span
+                class="slider"></span></label>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Trusted Sites</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <input type="text" id="input-whitelist-domain" placeholder="e.g. google.com"
+            style="flex:1;padding:7px 10px;font-size:10px;border:1px solid var(--border-color);border-radius:6px;outline:none;">
+          <button id="btn-add-whitelist"
+            style="background:var(--blue-active);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:10px;font-weight:600;cursor:pointer;">Add</button>
+        </div>
+        <div id="whitelist-domains" style="font-size:10px;color:var(--text-sub);">No trusted sites added.</div>
+      </div>
+
+      <div class="card">
+      </div>
     </div>
 
-    <script src="popup.js"></script>
-  </body>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay hidden" id="scan-loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">Scanning page...</div>
+  </div>
+
+  <!-- Footer Navigation -->
+  <div class="footer-nav">
+    <button class="tab-btn active" data-tab="dashboard">
+      <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      Dashboard
+    </button>
+    <button class="tab-btn" data-tab="history">
+      <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      History
+    </button>
+    <button class="tab-btn" data-tab="settings">
+      <svg viewBox="0 0 24 24" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+        </path>
+      </svg>
+      Settings
+    </button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
 </html>

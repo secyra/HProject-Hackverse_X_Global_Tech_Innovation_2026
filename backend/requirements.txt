@@ -5,4 +5,4 @@ httpx
 slowapi
 beautifulsoup4
 lxml
-google-generativeai
+google-genai

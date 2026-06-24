@@ -733,6 +733,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Shield ---
+  function initShield() {
+    const toggle = document.getElementById('toggle-shield');
+    if (!toggle) return;
+
+    fetchShieldStats();
+
+    toggle.addEventListener('change', () => {
+      const enabled = toggle.checked;
+      chrome.runtime.sendMessage({ action: 'toggle_shield', enabled }, (resp) => {
+        if (resp) updateShieldUI(resp.enabled, null);
+      });
+    });
+
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg.action === 'shield_blocked' && msg.tabId === (activeTabInfo ? activeTabInfo.id : null)) {
+        const countEl = document.getElementById('shield-blocked-count');
+        if (countEl) {
+          const current = parseInt(countEl.textContent) || 0;
+          countEl.textContent = current + 1;
+        }
+      }
+    });
+  }
+
+  function fetchShieldStats() {
+    chrome.runtime.sendMessage({ action: 'get_shield_stats' }, (stats) => {
+      if (!stats) return;
+      updateShieldUI(stats.enabled, stats);
+    });
+  }
+
+  function updateShieldUI(enabled, stats) {
+    const toggle = document.getElementById('toggle-shield');
+    const statusEl = document.getElementById('shield-status');
+    const iconEl = document.getElementById('shield-icon');
+    const countEl = document.getElementById('shield-blocked-count');
+    if (toggle) toggle.checked = enabled;
+    if (statusEl) {
+      statusEl.textContent = enabled ? 'Active' : 'Off';
+      statusEl.style.background = enabled ? '#dcfce7' : '#f1f5f9';
+      statusEl.style.color = enabled ? '#166534' : '#64748b';
+    }
+    if (iconEl) {
+      iconEl.style.background = enabled ? 'var(--accent-bg)' : '#f1f5f9';
+      iconEl.style.color = enabled ? 'var(--accent)' : '#94a3b8';
+    }
+    if (countEl && stats) {
+      countEl.textContent = stats.blockedThisPage || 0;
+    }
+  }
+
+  initShield();
+  setTimeout(fetchShieldStats, 500);
+
   // --- Tabs ---
   function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');

@@ -1,4 +1,108 @@
+try { importScripts('shield-domains.js'); } catch (e) { console.warn('[Shield] Failed to load shield-domains:', e); }
+
 const tabTelemetry = {};
+
+const SHIELD_RULE_PRIORITY = 1;
+const SHIELD_RULE_ID_OFFSET = 1000;
+let shieldEnabled = true;
+let blockedCounts = {};
+let aiClassifiedDomains = {};
+
+function initShieldRules() {
+  chrome.storage.local.get(['shieldEnabled'], (result) => {
+    shieldEnabled = result.shieldEnabled !== false;
+    if (shieldEnabled) {
+      installShieldRules();
+    }
+  });
+}
+
+async function installShieldRules() {
+  if (typeof TRACKER_DOMAINS === 'undefined' || !Array.isArray(TRACKER_DOMAINS)) {
+    console.warn('[Shield] TRACKER_DOMAINS not available, skipping DNR rules');
+    return;
+  }
+  try {
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const existingIds = existingRules.map(r => r.id);
+    const rules = TRACKER_DOMAINS.map((domain, i) => ({
+      id: SHIELD_RULE_ID_OFFSET + i,
+      priority: SHIELD_RULE_PRIORITY,
+      action: { type: 'block' },
+      condition: {
+        urlFilter: '||' + domain + '^',
+        resourceTypes: [
+          'script', 'image', 'stylesheet', 'xmlhttprequest',
+          'sub_frame', 'media', 'font', 'websocket', 'other'
+        ]
+      }
+    }));
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existingIds,
+      addRules: rules
+    });
+    console.log('[Shield] Installed ' + rules.length + ' DNR block rules');
+  } catch (e) {
+    console.warn('[Shield] Failed to install DNR rules:', e);
+  }
+}
+
+async function removeShieldRules() {
+  try {
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const ids = existingRules.filter(r => r.id >= SHIELD_RULE_ID_OFFSET).map(r => r.id);
+    if (ids.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ids });
+    }
+    console.log('[Shield] Removed ' + ids.length + ' DNR block rules');
+  } catch (e) {
+    console.warn('[Shield] Failed to remove DNR rules:', e);
+  }
+}
+
+async function aiClassifyDomain(domain) {
+  if (aiClassifiedDomains[domain]) return aiClassifiedDomains[domain];
+  try {
+    const res = await fetch('http://127.0.0.1:8000/classify-domain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    aiClassifiedDomains[domain] = data;
+    setTimeout(() => { delete aiClassifiedDomains[domain]; }, 3600000);
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function blockDomainViaAI(domain, tabId) {
+  if (!shieldEnabled) return;
+  const result = await aiClassifyDomain(domain);
+  if (!result || !result.should_block) return;
+  try {
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const maxExistingId = existingRules.reduce((max, r) => Math.max(max, r.id), SHIELD_RULE_ID_OFFSET);
+    const newRule = {
+      id: maxExistingId + 1,
+      priority: SHIELD_RULE_PRIORITY + 1,
+      action: { type: 'block' },
+      condition: {
+        urlFilter: '||' + domain + '^',
+        resourceTypes: ['script', 'image', 'xmlhttprequest', 'sub_frame', 'other']
+      }
+    };
+    await chrome.declarativeNetRequest.updateDynamicRules({ addRules: [newRule] });
+    if (tabId && tabId > 0) {
+      blockedCounts[tabId] = (blockedCounts[tabId] || 0) + 1;
+    }
+    console.log('[Shield] AI blocked domain:', domain, '-', result.reason);
+  } catch (e) {
+    console.warn('[Shield] AI block failed for', domain, ':', e);
+  }
+}
 
 const PHISHING_URL_PATTERNS = [
   /login.*\.(?:xyz|top|club|gq|ml|tk|cf|ga|work|review|life|live|online|site|website|space|press|host|stream|download|bid|trade|webcam|science|party|racing|win|date|men|loan|click|faith|moe)/i,
@@ -153,9 +257,30 @@ function checkStoredWarning(tabId, url) {
   } catch (e) {}
 }
 
+// Track DNR blocked requests for shield stats
+if (chrome.declarativeNetRequest && chrome.declarativeNetRequest.onRuleMatchedDebug) {
+  chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
+    const tabId = info.request.tabId;
+    if (tabId > 0) {
+      blockedCounts[tabId] = (blockedCounts[tabId] || 0) + 1;
+      try {
+        const url = new URL(info.request.url);
+        chrome.runtime.sendMessage({
+          action: 'shield_blocked',
+          tabId,
+          domain: url.hostname,
+          url: info.request.url,
+          ruleId: info.rule.ruleId
+        }).catch(() => {});
+      } catch (e) {}
+    }
+  });
+}
+
 // Clean up telemetry when a tab is closed
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete tabTelemetry[tabId];
+  delete blockedCounts[tabId];
 });
 
 // Reset telemetry and check URL when navigation starts
@@ -246,6 +371,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 
 chrome.runtime.onInstalled.addListener(() => {
+  initShieldRules();
   chrome.storage.local.get(['sitesentinel_settings'], (result) => {
     if (!result.sitesentinel_settings) {
       chrome.storage.local.set({
@@ -257,6 +383,10 @@ chrome.runtime.onInstalled.addListener(() => {
       });
     }
   });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  initShieldRules();
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -349,6 +479,48 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       chrome.action.setBadgeBackgroundColor({ tabId: msg.tabId, color: msg.color });
     }
     sendResponse({ ok: true });
+    return true;
+  }
+
+  // Shield message handlers
+  if (msg.action === 'get_shield_stats') {
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+      const tabId = tab ? tab.id : -1;
+      sendResponse({
+        enabled: shieldEnabled,
+        blockedThisPage: blockedCounts[tabId] || 0,
+        totalBlocked: Object.values(blockedCounts).reduce((a, b) => a + b, 0),
+        rulesCount: TRACKER_DOMAINS.length
+      });
+    });
+    return true;
+  }
+
+  if (msg.action === 'toggle_shield') {
+    shieldEnabled = msg.enabled;
+    chrome.storage.local.set({ shieldEnabled });
+    if (shieldEnabled) {
+      installShieldRules();
+    } else {
+      removeShieldRules();
+    }
+    sendResponse({ enabled: shieldEnabled });
+    return true;
+  }
+
+  if (msg.action === 'ai_classify_domain') {
+    aiClassifyDomain(msg.domain).then(result => {
+      sendResponse(result || { should_block: false });
+    });
+    return true;
+  }
+
+  if (msg.action === 'check_and_block_third_party') {
+    if (!shieldEnabled) { sendResponse({ blocked: false }); return true; }
+    const domains = msg.domains || [];
+    Promise.all(domains.map(d => blockDomainViaAI(d, msg.tabId))).then(() => {
+      sendResponse({ blocked: true });
+    });
     return true;
   }
 
