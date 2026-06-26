@@ -5,17 +5,17 @@ from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(dotenv_path=Path(__file__).parent / '.env', override=True)
 
 from scorer import compute_pre_score
-from reputation import check_domain_reputation
 from rate_limiter import limiter, apply_rate_limits
 from scraper import scrape_url, deep_crawl
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from models import UrlAnalyzePayload, TelemetryAnalyzePayload
-from vision import analyze_screenshot
-
-load_dotenv(override=True)
+from domain_info import get_domain_trust_profile
 
 app = FastAPI(title="Site Sentinel Backend")
 
@@ -129,6 +129,25 @@ def health_check():
     return {"status": "ok", "version": "2.0", "message": "Site Sentinel backend is running", "ai": ai_status}
 
 
+@app.post("/trust-profile")
+@limiter.limit("30/minute")
+async def get_trust_profile(request: Request, payload: dict):
+    """Dedicated lightweight endpoint for domain trust info (WHOIS age + SSL cert).
+    Called separately from /analyze so it never blocks the scan result."""
+    domain = payload.get("domain", "").strip()
+    if not domain:
+        raise HTTPException(status_code=400, detail="domain is required")
+    # Strip protocol/path if someone passes a full URL
+    if "://" in domain:
+        try:
+            from urllib.parse import urlparse
+            domain = urlparse(domain).hostname or domain
+        except Exception:
+            pass
+    profile = await get_domain_trust_profile(domain)
+    return profile
+
+
 @app.post("/analyze")
 @limiter.limit("30/minute")
 async def analyze(request: Request, payload: TelemetryAnalyzePayload):
@@ -139,7 +158,7 @@ async def analyze(request: Request, payload: TelemetryAnalyzePayload):
             "pre_score": 0,
             "flagged_issues": [],
             "ai_verdict": build_rule_verdict(0, [], {}),
-            "vision_verdict": None
+            "domain_trust_profile": None
         }
 
     pre_score, flagged_issues = compute_pre_score(telemetry)
@@ -152,18 +171,16 @@ async def analyze(request: Request, payload: TelemetryAnalyzePayload):
     else:
         ai_verdict = build_rule_verdict(pre_score, flagged_issues, telemetry)
 
-    vision_verdict = None
-    if USE_GEMINI and payload.screenshot:
-        try:
-            vision_verdict = analyze_screenshot(payload.screenshot, gemini_client)
-        except Exception:
-            pass
+    domain = telemetry.get("domain", "")
+    trust_profile = None
+    if domain:
+        trust_profile = await get_domain_trust_profile(domain)
 
     return {
         "pre_score": pre_score,
         "flagged_issues": flagged_issues,
         "ai_verdict": ai_verdict,
-        "vision_verdict": vision_verdict
+        "domain_trust_profile": trust_profile
     }
 
 
@@ -189,6 +206,10 @@ async def analyze_url(request: Request, payload: UrlAnalyzePayload):
         }
 
         domain = urlparse(payload.url).hostname or "the site"
+        trust_profile = None
+        if domain and domain != "unknown":
+            trust_profile = await get_domain_trust_profile(domain)
+
         safety_score = 100 - pre_score
         verdict_text = "safe" if safety_score >= 80 else "suspicious" if safety_score >= 40 else "dangerous"
         exposure = "low" if safety_score >= 80 else "medium" if safety_score >= 40 else "high"
@@ -229,8 +250,8 @@ async def analyze_url(request: Request, payload: UrlAnalyzePayload):
                 "data_exposure_risk": exposure,
                 "plain_english_briefing": briefing
             },
-            "vision_verdict": None,
-            "share_token": share_token
+            "share_token": share_token,
+            "domain_trust_profile": trust_profile
         }
 
     scraped = await scrape_url(payload.url)
@@ -287,6 +308,11 @@ async def analyze_url(request: Request, payload: UrlAnalyzePayload):
     else:
         briefing = f"{domain} appears to be a legitimate website with standard security measures in place. No obvious signs of phishing or deception were detected. You can browse safely, but always stay alert."
 
+    domain = scraped.get("domain", "")
+    trust_profile = None
+    if domain:
+        trust_profile = await get_domain_trust_profile(domain)
+
     return {
         "pre_score": pre_score,
         "flagged_issues": flagged_issues,
@@ -301,8 +327,8 @@ async def analyze_url(request: Request, payload: UrlAnalyzePayload):
             "data_exposure_risk": exposure,
             "plain_english_briefing": briefing
         },
-        "vision_verdict": None,
-        "share_token": share_token
+        "share_token": share_token,
+        "domain_trust_profile": trust_profile
     }
 
 

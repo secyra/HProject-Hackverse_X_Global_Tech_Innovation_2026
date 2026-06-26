@@ -5,8 +5,34 @@ const tabTelemetry = {};
 const SHIELD_RULE_PRIORITY = 1;
 const SHIELD_RULE_ID_OFFSET = 1000;
 let shieldEnabled = true;
-let blockedCounts = {};
 let aiClassifiedDomains = {};
+
+function incrementBlockedCount(tabId) {
+  if (!tabId || tabId <= 0) return;
+  chrome.storage.session.get(['blockedCounts'], (result) => {
+    const counts = result.blockedCounts || {};
+    counts[tabId] = (counts[tabId] || 0) + 1;
+    chrome.storage.session.set({ blockedCounts: counts });
+  });
+}
+
+function resetBlockedCount(tabId) {
+  if (!tabId || tabId <= 0) return;
+  chrome.storage.session.get(['blockedCounts'], (result) => {
+    const counts = result.blockedCounts || {};
+    counts[tabId] = 0;
+    chrome.storage.session.set({ blockedCounts: counts });
+  });
+}
+
+function deleteBlockedCount(tabId) {
+  if (!tabId || tabId <= 0) return;
+  chrome.storage.session.get(['blockedCounts'], (result) => {
+    const counts = result.blockedCounts || {};
+    delete counts[tabId];
+    chrome.storage.session.set({ blockedCounts: counts });
+  });
+}
 
 function initShieldRules() {
   chrome.storage.local.get(['shieldEnabled'], (result) => {
@@ -95,9 +121,7 @@ async function blockDomainViaAI(domain, tabId) {
       }
     };
     await chrome.declarativeNetRequest.updateDynamicRules({ addRules: [newRule] });
-    if (tabId && tabId > 0) {
-      blockedCounts[tabId] = (blockedCounts[tabId] || 0) + 1;
-    }
+    incrementBlockedCount(tabId);
     console.log('[Shield] AI blocked domain:', domain, '-', result.reason);
   } catch (e) {
     console.warn('[Shield] AI block failed for', domain, ':', e);
@@ -115,7 +139,7 @@ const PHISHING_URL_PATTERNS = [
   /paypal.*\.(?:xyz|top|club|gq|ml|tk|ga)/i,
   /amazon.*\.(?:xyz|top|club|gq|ml|tk|ga|review)/i,
   /netflix.*\.(?:xyz|top|club|gq|ml|tk|ga)/i,
-  /(?:paypa1|paypaI|arnazon|arnaz0n|netf1ix|g00gle|faceb00k|micros0ft|app1e|whatsapp|instagrarn)/i
+  /(?:paypa1|paypaI|arnazon|arnaz0n|netf1ix|g00gle|faceb00k|micros0ft|app1e|vvhatsapp|whataspp|whatapp|instagrarn)/i
 ];
 
 const LOW_CRED_TLDS = [
@@ -185,7 +209,7 @@ function checkUrlPhishingRisk(url) {
     const fullUrl = url.toLowerCase();
 
     for (const pattern of PHISHING_URL_PATTERNS) {
-      if (pattern.test(hostname) || pattern.test(fullUrl)) {
+      if (pattern.test(hostname)) {
         return { risk: 'high', reason: 'Matches known phishing URL pattern' };
       }
     }
@@ -262,7 +286,7 @@ if (chrome.declarativeNetRequest && chrome.declarativeNetRequest.onRuleMatchedDe
   chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
     const tabId = info.request.tabId;
     if (tabId > 0) {
-      blockedCounts[tabId] = (blockedCounts[tabId] || 0) + 1;
+      incrementBlockedCount(tabId);
       try {
         const url = new URL(info.request.url);
         chrome.runtime.sendMessage({
@@ -280,7 +304,7 @@ if (chrome.declarativeNetRequest && chrome.declarativeNetRequest.onRuleMatchedDe
 // Clean up telemetry when a tab is closed
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete tabTelemetry[tabId];
-  delete blockedCounts[tabId];
+  deleteBlockedCount(tabId);
 });
 
 // Reset telemetry and check URL when navigation starts
@@ -294,6 +318,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       analyticsScripts: 0,
       adScripts: 0
     };
+    resetBlockedCount(tabId);
 
     if (tab.url && !tab.url.startsWith('chrome-extension://')) {
       checkAndWarn(tabId, tab.url);
@@ -426,17 +451,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  if (msg.action === 'capture_screenshot') {
-    chrome.tabs.captureVisibleTab(msg.windowId || null, { format: 'png' }, (dataUrl) => {
-      if (chrome.runtime.lastError) {
-        sendResponse({ error: chrome.runtime.lastError.message });
-        return;
-      }
-      sendResponse({ screenshot: dataUrl });
-    });
-    return true;
-  }
-
   if (msg.action === 'check_url_phishing') {
     const result = checkUrlPhishingRisk(msg.url);
     sendResponse(result);
@@ -486,11 +500,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'get_shield_stats') {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
       const tabId = tab ? tab.id : -1;
-      sendResponse({
-        enabled: shieldEnabled,
-        blockedThisPage: blockedCounts[tabId] || 0,
-        totalBlocked: Object.values(blockedCounts).reduce((a, b) => a + b, 0),
-        rulesCount: TRACKER_DOMAINS.length
+      chrome.storage.session.get(['blockedCounts'], (result) => {
+        const counts = result.blockedCounts || {};
+        sendResponse({
+          enabled: shieldEnabled,
+          blockedThisPage: counts[tabId] || 0,
+          totalBlocked: Object.values(counts).reduce((a, b) => a + b, 0),
+          rulesCount: TRACKER_DOMAINS.length
+        });
       });
     });
     return true;

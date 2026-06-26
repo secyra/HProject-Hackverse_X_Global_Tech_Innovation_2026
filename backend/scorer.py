@@ -103,7 +103,7 @@ def compute_pre_score(telemetry: dict) -> tuple[int, list[str]]:
         score += 15
         flags.append(f"High external link ratio ({external_links}/{total_links} links go off-domain)")
 
-    if telemetry.get("iframes", 0) > 3:
+    if telemetry.get("iframes", 0) > 8:
         score += 10
         flags.append(f"High number of iframes detected ({telemetry['iframes']} iframes)")
 
@@ -114,20 +114,20 @@ def compute_pre_score(telemetry: dict) -> tuple[int, list[str]]:
             flags.append(f"{tiny_iframes} tiny/hidden iframe(s) detected (possible clickjacking)")
 
         hidden_inputs = hidden.get("hiddenInputs", 0)
-        if hidden_inputs > 10:
+        if hidden_inputs > 50:
             score += 5
             flags.append(f"High number of hidden input fields ({hidden_inputs})")
 
-    if not security.get("hasCSP", True):
+    if not security.get("hasCSP", True) and not trust.get("isHttps", True):
         score += 5
         flags.append("Missing Content-Security-Policy (risk of XSS)")
 
     net = telemetry.get("network", {})
     third_party_reqs = net.get("thirdPartyRequests", 0)
-    if third_party_reqs > 50:
+    if third_party_reqs > 80:
         score += 20
         flags.append(f"Excessive third-party requests ({third_party_reqs})")
-    elif third_party_reqs > 20:
+    elif third_party_reqs > 40:
         score += 10
         flags.append(f"High number of third-party requests ({third_party_reqs})")
 
@@ -142,7 +142,7 @@ def compute_pre_score(telemetry: dict) -> tuple[int, list[str]]:
         flags.append(f"Multiple advertising scripts ({ads})")
 
     analytics = net.get("analyticsScripts", 0)
-    if analytics > 3:
+    if analytics > 8:
         score += 5
         flags.append(f"Multiple analytics scripts ({analytics})")
 

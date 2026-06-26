@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   let activeTabInfo = null;
   let activeTelemetry = null;
+  let _lastNetworkData = null;
+  let _lastRootDomain = '';
+  let _lastVerdict = 'safe';
 
   initTabs();
   initSettings();
@@ -29,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       console.log('[SiteSentinel] Restoring cached scan for', domain);
       showResults(cached.scanResult, cached.telemetry || {}, cached.deepResult || null);
+      if (domain && domain !== 'N/A') {
+        fetchAndShowTrustProfile(domain);
+      }
     });
   }
 
@@ -84,34 +90,37 @@ document.addEventListener('DOMContentLoaded', () => {
       telemetry.network = netTelemetry;
     }
 
-    // Step 3: Take screenshot
-    loadingText.textContent = 'Capturing page screenshot...';
-    const screenshot = await captureScreenshot(activeTabInfo.windowId);
-
-    // Step 4: Send to backend for analysis
+    // Step 3: Send to backend for analysis
     loadingText.textContent = 'Running security analysis...';
-    const scanResult = await analyzePage(telemetry, screenshot);
+    const scanResult = await analyzePage(telemetry);
 
-    // Step 5: Run deep scan
+    // Step 4: Run deep scan
     let deepResult = null;
     try {
+      let settings = { deepScan: true };
       const stored = localStorage.getItem('sitesentinel_settings');
       if (stored) {
-        const settings = JSON.parse(stored);
-        if (settings.deepScan !== false && activeTabInfo.url) {
-          loadingText.textContent = 'Crawling site pages...';
-          deepResult = await runDeepScan(activeTabInfo.url);
-        }
+        settings = JSON.parse(stored);
+      }
+      if (settings.deepScan !== false && activeTabInfo.url) {
+        loadingText.textContent = 'Crawling site pages...';
+        deepResult = await runDeepScan(activeTabInfo.url);
       }
     } catch (_) {}
 
     overlay.classList.add('hidden');
 
-    // Step 6: Show all results
+    // Step 5: Show all results immediately
     showResults(scanResult, telemetry, deepResult);
 
     // Cache scan result so reopening popup on same page shows results immediately
     cacheScanResult(scanResult, telemetry, deepResult);
+
+    // Step 6: Fetch trust profile separately (non-blocking) — fills in after results show
+    const domain = telemetry.domain || scanResult.domain;
+    if (domain && domain !== 'N/A') {
+      fetchAndShowTrustProfile(domain);
+    }
   }
 
   function cacheScanResult(scanResult, telemetry, deepResult) {
@@ -157,32 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function captureScreenshot(windowId) {
-    return new Promise((resolve) => {
-      if (!chrome.runtime || !chrome.runtime.sendMessage) {
-        resolve(null);
-        return;
-      }
-      chrome.runtime.sendMessage({ action: "capture_screenshot", windowId: windowId }, (resp) => {
-        if (chrome.runtime.lastError || !resp || resp.error) {
-          resolve(null);
-          return;
-        }
-        resolve(resp.screenshot || null);
-      });
-    });
-  }
-
-  async function analyzePage(telemetry, screenshotData) {
+  async function analyzePage(telemetry) {
     const payload = { telemetry: telemetry || {} };
-    if (screenshotData) {
-      payload.screenshot = screenshotData.split(',')[1];
-    }
     const domain = telemetry ? telemetry.domain : 'unknown';
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       const res = await fetch('http://127.0.0.1:8000/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -200,12 +190,46 @@ document.addEventListener('DOMContentLoaded', () => {
         verdict: data.ai_verdict ? data.ai_verdict.verdict : 'suspicious',
         description: data.ai_verdict ? data.ai_verdict.summary : 'Anomalies detected.',
         flags: data.ai_verdict ? data.ai_verdict.top_risks : [],
-        plainEnglishBriefing: data.ai_verdict ? data.ai_verdict.plain_english_briefing : null,
-        visionVerdict: data.vision_verdict || null
+        plainEnglishBriefing: data.ai_verdict ? data.ai_verdict.plain_english_briefing : null
       };
     } catch (err) {
       console.warn('Backend unavailable, running local analysis:', err.message);
       return computeLocalScore(telemetry || {}, domain);
+    }
+  }
+
+  // Fetch trust profile separately so it never blocks the main scan
+  async function fetchAndShowTrustProfile(domain) {
+    const section = document.getElementById('section-trust-profile');
+    if (!section) return;
+
+    // Show it immediately with 'Loading...' state
+    section.classList.remove('hidden');
+    const ageEl = document.getElementById('trust-domain-age');
+    const issuerEl = document.getElementById('trust-ssl-issuer');
+    const validityEl = document.getElementById('trust-ssl-validity');
+    if (ageEl) { ageEl.textContent = 'Looking up…'; ageEl.style.color = 'var(--text-tertiary)'; }
+    if (issuerEl) { issuerEl.textContent = 'Looking up…'; issuerEl.style.color = 'var(--text-tertiary)'; }
+    if (validityEl) { validityEl.textContent = 'Looking up…'; validityEl.style.color = 'var(--text-tertiary)'; }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch('http://127.0.0.1:8000/trust-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error('Status ' + res.status);
+      const profile = await res.json();
+      updateTrustProfile(profile);
+    } catch (err) {
+      console.warn('[TrustProfile] Fetch failed:', err.message);
+      if (ageEl) { ageEl.textContent = 'Unavailable'; ageEl.style.color = 'var(--text-tertiary)'; }
+      if (issuerEl) { issuerEl.textContent = 'Unavailable'; issuerEl.style.color = 'var(--text-tertiary)'; }
+      if (validityEl) { validityEl.textContent = 'Unavailable'; validityEl.style.color = 'var(--text-tertiary)'; }
     }
   }
 
@@ -219,44 +243,151 @@ document.addEventListener('DOMContentLoaded', () => {
     const hidden = telemetry.hiddenElements || {};
     const net = telemetry.network || {};
 
-    if (!trust.isHttps) { risk += 30; flags.push("Site is not using HTTPS"); }
-    if (!trust.hasPrivacyPolicy) { risk += 15; flags.push("No privacy policy link found"); }
-    if (!trust.hasTerms) { risk += 10; flags.push("No terms & conditions link found"); }
-    if (!trust.hasContact) { risk += 5; flags.push("No contact or support page found"); }
-    if (telemetry.externalFormActions > 0) { risk += 35; flags.push("Form(s) submit data to an external domain"); }
+    // --- Trust signals (mirrors scorer.py exactly) ---
+    if (!trust.isHttps) {
+      risk += 30;
+      flags.push('Site is not using HTTPS (unencrypted connection)');
+    }
+    if (!trust.hasPrivacyPolicy) {
+      risk += 15;
+      flags.push('No privacy policy link found');
+    }
+    if (!trust.hasTerms) {
+      risk += 10;
+      flags.push('No terms & conditions link found');
+    }
+    if (!trust.hasContact) {
+      risk += 5;
+      flags.push('No contact or support page found');
+    }
+
+    // --- Form analysis ---
+    const extFormActions = telemetry.externalFormActions || 0;
+    if (extFormActions > 0) {
+      risk += 35;
+      flags.push(`Form(s) submit data to an external domain (${extFormActions} found)`);
+    }
     const suspiciousFormActions = telemetry.suspiciousFormActions || [];
-    if (suspiciousFormActions.length > 0) { risk += 25; flags.push("Suspicious form action URLs detected"); }
-    if (telemetry.loginForms > 0 && !trust.isHttps) { risk += 20; flags.push("Login form on insecure page"); }
+    if (suspiciousFormActions.length > 0) {
+      risk += 25;
+      flags.push(`Suspicious form action URLs detected (${suspiciousFormActions.length})`);
+    }
+    if ((telemetry.loginForms || 0) > 0 && !trust.isHttps) {
+      risk += 20;
+      flags.push('Login form detected on an insecure (non-HTTPS) page');
+    }
 
-    const keywords = telemetry.detectedKeywords || [];
-    if (keywords.length > 0) { risk += 15; flags.push("Suspicious keywords detected (" + keywords.length + ")"); }
+    // --- Keyword analysis (matches scorer.py severity-based scoring) ---
+    const keywordCategories = telemetry.keywordCategories || {};
+    const CATEGORY_WEIGHTS = {
+      phishing: 35, credential_theft: 30, scam: 25,
+      malware: 40, social_engineering: 25, financial: 20, urgency: 10
+    };
+    if (Object.keys(keywordCategories).length > 0) {
+      let totalCatScore = 0;
+      const catFlags = [];
+      for (const [cat, data] of Object.entries(keywordCategories)) {
+        const weight = CATEGORY_WEIGHTS[cat] || 15;
+        const catScore = Math.min(data.count * (weight / 3), weight);
+        totalCatScore += catScore;
+        catFlags.push(`${data.count} ${cat.replace(/_/g, ' ')} keyword(s) detected (severity: ${data.maxSeverity})`);
+      }
+      risk += Math.min(totalCatScore, 50);
+      flags.push(...catFlags.slice(0, 3));
+      if (catFlags.length > 3) {
+        flags.push(`Additional threat categories: ${Object.keys(keywordCategories).join(', ')}`);
+      }
+    } else {
+      // Fallback for plain keyword list (no categories)
+      const keywords = telemetry.detectedKeywords || [];
+      const keywordSeverity = telemetry.keywordTotalSeverity || 0;
+      if (keywordSeverity > 0) {
+        risk += Math.min(keywordSeverity * 2, 30);
+      } else if (keywords.length > 0) {
+        risk += Math.min(keywords.length * 10, 25);
+        flags.push(`Suspicious keywords detected: ${keywords.slice(0, 5).join(', ')}`);
+      }
+    }
 
+    // --- Link analysis ---
     const shortened = links.shortenedUrls || 0;
-    if (shortened > 0) { risk += Math.min(shortened * 10, 20); flags.push("Shortened URLs found"); }
-
+    if (shortened > 0) {
+      risk += Math.min(shortened * 10, 20);
+      flags.push(`${shortened} shortened URL(s) found (destination hidden)`);
+    }
     const suspiciousExtLinks = links.suspiciousExternalLinks || [];
-    if (suspiciousExtLinks.length > 0) { risk += Math.min(suspiciousExtLinks.length * 8, 25); flags.push("Suspicious external links detected"); }
-
+    if (suspiciousExtLinks.length > 0) {
+      risk += Math.min(suspiciousExtLinks.length * 8, 25);
+      flags.push(`${suspiciousExtLinks.length} suspicious external link(s) detected (potential phishing)`);
+    }
     const lowCredLinks = links.lowCredibilityLinks || [];
-    if (lowCredLinks.length > 0) { risk += Math.min(lowCredLinks.length * 5, 15); flags.push("Low-credibility TLD links"); }
+    if (lowCredLinks.length > 0) {
+      risk += Math.min(lowCredLinks.length * 5, 15);
+      flags.push(`${lowCredLinks.length} link(s) to low-credibility TLDs detected`);
+    }
 
+    // --- Data field analysis ---
     const cardFields = dataFields.creditCardFields || 0;
-    if (cardFields > 0) { risk += 10; flags.push("Credit card input fields detected"); }
+    if (cardFields > 0) {
+      risk += 10;
+      flags.push(`Credit card input fields detected (${cardFields} found)`);
+    }
+    // Multiple password fields on login page
+    if ((telemetry.loginForms || 0) > 0 && (telemetry.passwordFields || 0) > 3) {
+      risk += 10;
+      flags.push(`Multiple password fields detected (${telemetry.passwordFields} found)`);
+    }
 
+    // --- Link ratio ---
     const extLinks = links.externalLinks || 0;
     const intLinks = links.internalLinks || 0;
     const totalLinks = extLinks + intLinks;
-    if (totalLinks > 0 && (extLinks / totalLinks) > 0.8) { risk += 15; flags.push("High external link ratio"); }
+    if (totalLinks > 0 && (extLinks / totalLinks) > 0.8) {
+      risk += 15;
+      flags.push(`High external link ratio (${extLinks}/${totalLinks} links go off-domain)`);
+    }
 
-    if ((telemetry.iframes || 0) > 3) { risk += 10; flags.push("High number of iframes detected"); }
-    if ((hidden.tinyIframes || 0) > 0) { risk += 15; flags.push("Tiny/hidden iframes detected (possible clickjacking)"); }
-    if (!security.hasCSP) { risk += 5; flags.push("Missing Content-Security-Policy"); }
+    // --- iframe analysis ---
+    if ((telemetry.iframes || 0) > 8) {
+      risk += 10;
+      flags.push(`High number of iframes detected (${telemetry.iframes} iframes)`);
+    }
+    if ((hidden.tinyIframes || 0) > 0) {
+      risk += 15;
+      flags.push(`${hidden.tinyIframes} tiny/hidden iframe(s) detected (possible clickjacking)`);
+    }
+    if ((hidden.hiddenInputs || 0) > 50) {
+      risk += 5;
+      flags.push(`High number of hidden input fields (${hidden.hiddenInputs})`);
+    }
 
+    // --- Security headers ---
+    if (!security.hasCSP && !trust.isHttps) {
+      risk += 5;
+      flags.push('Missing Content-Security-Policy (risk of XSS)');
+    }
+
+    // --- Network telemetry ---
     const thirdPartyReqs = net.thirdPartyRequests || 0;
-    if (thirdPartyReqs > 50) { risk += 20; flags.push("Excessive third-party requests (" + thirdPartyReqs + ")"); }
-    else if (thirdPartyReqs > 20) { risk += 10; flags.push("High number of third-party requests"); }
-    if ((net.trackingScripts || 0) > 0) { risk += 15; flags.push("Tracking scripts detected"); }
-    if ((net.adScripts || 0) > 5) { risk += 10; flags.push("Multiple advertising scripts"); }
+    if (thirdPartyReqs > 80) {
+      risk += 20;
+      flags.push(`Excessive third-party requests (${thirdPartyReqs})`);
+    } else if (thirdPartyReqs > 40) {
+      risk += 10;
+      flags.push(`High number of third-party requests (${thirdPartyReqs})`);
+    }
+    if ((net.trackingScripts || 0) > 0) {
+      risk += 15;
+      flags.push(`Tracking scripts detected (${net.trackingScripts})`);
+    }
+    if ((net.adScripts || 0) > 5) {
+      risk += 10;
+      flags.push(`Multiple advertising scripts (${net.adScripts})`);
+    }
+    if ((net.analyticsScripts || 0) > 8) {
+      risk += 5;
+      flags.push(`Multiple analytics scripts (${net.analyticsScripts})`);
+    }
 
     risk = Math.min(risk, 100);
     const safety = 100 - risk;
@@ -265,24 +396,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (safety < 40) verdict = 'dangerous';
     else if (safety < 80) verdict = 'suspicious';
 
-    let summary = `Scanned ${domain}.`;
+    // Build summary matching backend format
+    const domainLabel = domain || telemetry.domain || 'the site';
+    let summary = `Scanned ${domainLabel}.`;
     if (flags.length > 0) {
-      summary += ` Found ${flags.length} issue${flags.length > 1 ? 's' : ''}: ${flags.slice(0, 3).join('; ')}`;
+      summary += ` Found ${flags.length} issue${flags.length > 1 ? 's' : ''}:`;
+      summary += ' ' + flags.slice(0, 3).join(' ');
       if (flags.length > 3) summary += ` and ${flags.length - 3} more.`;
     } else {
-      summary += " No significant issues detected.";
+      summary += ' No significant issues detected.';
     }
 
     let briefing;
     if (verdict === 'dangerous') {
-      briefing = `This site appears to be a fraudulent version of ${domain}. It contains security warnings and suspicious forms designed to trick you into sharing sensitive data. Do not enter any personal or financial information on this page.`;
+      briefing = `This site appears to be a fraudulent version of ${domainLabel}. It contains security warnings and suspicious forms designed to trick you into sharing sensitive data. Do not enter any personal or financial information on this page.`;
     } else if (verdict === 'suspicious') {
-      briefing = `There are unusual signals on ${domain} that suggest it may not be trustworthy. Some forms or links on this page could be collecting your information without your knowledge. Be cautious and avoid entering sensitive data.`;
+      briefing = `There are unusual signals on ${domainLabel} that suggest it may not be trustworthy. Some forms or links on this page could be collecting your information without your knowledge. Be cautious and avoid entering sensitive data.`;
     } else {
-      briefing = `${domain} appears to be a legitimate website with standard security measures in place. No obvious signs of phishing or deception were detected. You can browse safely, but always stay alert.`;
+      briefing = `${domainLabel} appears to be a legitimate website with standard security measures in place. No obvious signs of phishing or deception were detected. You can browse safely, but always stay alert.`;
     }
 
-    return { domain, score: safety, threatScore: risk, verdict, description: summary, flags, plainEnglishBriefing: briefing, visionVerdict: null };
+    const exposure = safety >= 80 ? 'low' : safety >= 40 ? 'medium' : 'high';
+
+    return {
+      domain: domainLabel,
+      score: safety,
+      threatScore: risk,
+      verdict,
+      description: summary,
+      flags,
+      plainEnglishBriefing: briefing,
+      dataExposureRisk: exposure
+    };
   }
 
   function showResults(result, telemetry, deepResult) {
@@ -332,57 +477,6 @@ document.addEventListener('DOMContentLoaded', () => {
       briefingEl.classList.remove('hidden');
     } else if (briefingEl) {
       briefingEl.classList.add('hidden');
-    }
-
-    // --- Vision Analysis ---
-    const visionSection = document.getElementById('section-vision-analysis');
-    const visionContent = document.getElementById('vision-content');
-    if (result.visionVerdict && visionSection && visionContent) {
-      visionSection.classList.remove('hidden');
-      let html = '<div class="vision-grid">';
-
-      if (result.visionVerdict.vision_analysis) {
-        html += `<div class="vision-analysis-line">${escapeHtml(result.visionVerdict.vision_analysis)}</div>`;
-      }
-
-      if (result.visionVerdict.brand_impersonation && result.visionVerdict.brand_impersonation.detected) {
-        const brand = result.visionVerdict.brand_impersonation.suspected_brand || 'unknown brand';
-        html += `<div class="vision-item danger"><span class="vision-label">Brand Impersonation</span><span>${escapeHtml(brand)}</span></div>`;
-      }
-
-      if (result.visionVerdict.fake_badges && result.visionVerdict.fake_badges.detected) {
-        html += `<div class="vision-item danger"><span class="vision-label">Fake Badges</span><span>${escapeHtml(result.visionVerdict.fake_badges.badges_found.join(', '))}</span></div>`;
-      }
-
-      if (result.visionVerdict.urgency_tactics && result.visionVerdict.urgency_tactics.detected) {
-        html += `<div class="vision-item warning"><span class="vision-label">Urgency Tactics</span><span>${escapeHtml(result.visionVerdict.urgency_tactics.elements_found.join(', '))}</span></div>`;
-      }
-
-      if (result.visionVerdict.cloned_ui && result.visionVerdict.cloned_ui.detected) {
-        html += `<div class="vision-item warning"><span class="vision-label">Cloned UI</span><span>${escapeHtml(result.visionVerdict.cloned_ui.details)}</span></div>`;
-      }
-
-      if (result.visionVerdict.visual_flags && result.visionVerdict.visual_flags.length > 0) {
-        result.visionVerdict.visual_flags.forEach(f => {
-          html += `<div class="vision-item danger"><span class="vision-label">Flag</span><span>${escapeHtml(f)}</span></div>`;
-        });
-      }
-
-      html += '</div>';
-
-      if (result.visionVerdict.visual_risk_score != null) {
-        const vs = result.visionVerdict.visual_risk_score;
-        const vColor = vs >= 60 ? '#dc2626' : vs >= 30 ? '#f59e0b' : '#10b981';
-        html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-          <span style="font-size:9px;color:var(--text-sub);font-weight:600;">Visual Risk</span>
-          <div class="progress-bar-container" style="flex:1;"><div class="progress-bar-fill" style="width:${vs}%;background:${vColor};"></div></div>
-          <span style="font-size:11px;font-weight:700;color:${vColor};">${vs}%</span>
-        </div>`;
-      }
-
-      visionContent.innerHTML = html;
-    } else if (visionSection) {
-      visionSection.classList.add('hidden');
     }
 
     // --- Risk Factors ---
@@ -479,9 +573,561 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTrackerRanking(telemetry.network || {});
     updateSecurityTip();
 
+    // Trust Profile is fetched separately (see fetchAndShowTrustProfile)
+    // Hide it initially so stale data from last scan doesn't show
+    const trustSection = document.getElementById('section-trust-profile');
+    if (trustSection) trustSection.classList.add('hidden');
+
+    // --- Network Map (draw on canvas in background tab) ---
+    _lastNetworkData = telemetry.network || {};
+    _lastRootDomain = result.domain || '';
+    _lastVerdict = result.verdict || 'safe';
+    drawNetworkMap(_lastNetworkData, _lastRootDomain, _lastVerdict);
+
     // Scroll to top of results
     document.getElementById('main-viewport').scrollTop = 0;
   }
+
+  function updateTrustProfile(profile) {
+    const section = document.getElementById('section-trust-profile');
+    if (!section) return;
+
+    if (!profile) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+
+    const ageEl = document.getElementById('trust-domain-age');
+    const issuerEl = document.getElementById('trust-ssl-issuer');
+    const validityEl = document.getElementById('trust-ssl-validity');
+
+    if (ageEl) {
+      ageEl.textContent = profile.age_description || 'Unavailable';
+      if (profile.is_new_domain) {
+        ageEl.style.color = '#dc2626';
+      } else if (profile.age_description && profile.age_description !== 'Unavailable') {
+        ageEl.style.color = '#059669';
+      } else {
+        ageEl.style.color = 'var(--text-primary)';
+      }
+    }
+
+    if (issuerEl) {
+      const issuer = profile.ssl_issuer || 'Unavailable';
+      issuerEl.textContent = issuer.length > 28 ? issuer.substring(0, 26) + '…' : issuer;
+      issuerEl.style.color = (issuer === 'Unavailable' || issuer === 'Unknown') ? '#f59e0b' : '#059669';
+    }
+
+    if (validityEl) {
+      const days = profile.ssl_days_remaining;
+      if (days === null || days === undefined) {
+        validityEl.textContent = 'Unknown';
+        validityEl.style.color = '#f59e0b';
+      } else if (days < 0) {
+        validityEl.textContent = 'Expired!';
+        validityEl.style.color = '#dc2626';
+        validityEl.style.fontWeight = '800';
+      } else if (days < 30) {
+        validityEl.textContent = `⚠ Expires in ${days} day${days !== 1 ? 's' : ''}`;
+        validityEl.style.color = '#dc2626';
+      } else if (days < 90) {
+        validityEl.textContent = `${days} days remaining`;
+        validityEl.style.color = '#f59e0b';
+      } else {
+        validityEl.textContent = `${days} days remaining`;
+        validityEl.style.color = '#059669';
+      }
+    }
+  }
+
+  // ======= NETWORK MAP: animated force-directed canvas graph =======
+  let _mapAnimFrame = null;
+  let _mapNodes = [];
+  let _mapEdges = [];
+  let _mapDrag = null;
+  let _mapParticles = [];
+
+  function drawNetworkMap(net, rootDomain, verdict) {
+    const canvas = document.getElementById('network-map-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Cancel previous animation
+    if (_mapAnimFrame) { cancelAnimationFrame(_mapAnimFrame); _mapAnimFrame = null; }
+
+    const W = canvas.width || 334;
+    const H = canvas.height || 338;
+
+    const nodes = [];
+    const edges = [];
+
+    // Root node color based on verdict
+    const rootColor = verdict === 'dangerous' ? '#dc2626' : verdict === 'suspicious' ? '#d97706' : '#2563eb';
+
+    nodes.push({
+      id: 'root',
+      label: rootDomain || 'This Site',
+      x: W / 2, y: H / 2,
+      vx: 0, vy: 0,
+      r: 22,
+      color: rootColor,
+      pulse: 0,
+      cat: 'root',
+      reqCount: 0,
+      fixed: false
+    });
+
+    _mapParticles = [];
+
+    const catColors = { analytics: '#d97706', advertising: '#ea580c', tracking: '#7c3aed', other: '#64748b', cdn: '#0891b2' };
+    const groups = net.domainGroups || {};
+    const rawDomains = net.thirdPartyDomains || [];
+    const groupKeys = Object.keys(groups);
+    const maxNodes = 14;
+    let placed = 0;
+
+    // Enhanced subdomain and categorization resolution
+    if (groupKeys.length > 0) {
+      const showSubdomains = groupKeys.length < 6;
+      if (showSubdomains) {
+        // Expand to show individual subdomains for low main-domain density
+        const subNodes = [];
+        groupKeys.forEach(main => {
+          const g = groups[main];
+          Object.keys(g.subdomains || {}).forEach(sub => {
+            const fullDom = sub === 'www' ? main : `${sub}.${main}`;
+            subNodes.push({ main, fullDom, count: g.subdomains[sub].count, categories: g.subdomains[sub].categories });
+          });
+        });
+
+        subNodes.slice(0, maxNodes).forEach((nodeInfo, idx) => {
+          const mainDomain = nodeInfo.fullDom;
+          const h = mainDomain.toLowerCase();
+          let topCat = 'other';
+          if (h.includes('analytics') || h.includes('gtag') || h.includes('stat') || h.includes('mixpanel') || h.includes('scorecardresearch')) {
+            topCat = 'analytics';
+          } else if (h.includes('ad') || h.includes('doubleclick') || h.includes('pixel') || h.includes('adsystem') || h.includes('adnxs') || h.includes('pubmatic') || h.includes('rubiconproject') || h.includes('adservice')) {
+            topCat = 'advertising';
+          } else if (h.includes('track') || h.includes('beacon') || h.includes('collect') || h.includes('logger') || h.includes('telemetry')) {
+            topCat = 'tracking';
+          } else if (h.includes('cdn') || h.includes('static') || h.includes('assets') || h.includes('akamai') || h.includes('cloudfront') || h.includes('fastly') || h.includes('gstatic') || h.includes('images') || h.includes('edge')) {
+            topCat = 'cdn';
+          } else {
+            let maxCount = 0;
+            Object.keys(nodeInfo.categories || {}).forEach(cat => {
+              if ((nodeInfo.categories[cat] || 0) > maxCount) { maxCount = nodeInfo.categories[cat]; topCat = cat; }
+            });
+          }
+
+          const angle = (idx / Math.min(subNodes.length, maxNodes)) * 2 * Math.PI - Math.PI / 2;
+          const ring = idx < 7 ? 105 : 155;
+          const reqCount = nodeInfo.count || 1;
+          const r = Math.min(7 + reqCount * 0.35, 14);
+
+          nodes.push({
+            id: mainDomain, label: mainDomain,
+            x: W / 2 + Math.cos(angle) * ring + (Math.random() - 0.5) * 20,
+            y: H / 2 + Math.sin(angle) * ring + (Math.random() - 0.5) * 20,
+            vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
+            r, color: catColors[topCat] || '#64748b',
+            pulse: 0, cat: topCat, reqCount, fixed: false
+          });
+          edges.push({ from: 'root', to: mainDomain, cat: topCat });
+        });
+      } else {
+        // Standard grouped main-domain rendering
+        groupKeys.slice(0, maxNodes).forEach((mainDomain, idx) => {
+          const g = groups[mainDomain];
+          const h = mainDomain.toLowerCase();
+          let topCat = 'other';
+          if (h.includes('analytics') || h.includes('gtag') || h.includes('stat') || h.includes('mixpanel') || h.includes('scorecardresearch')) {
+            topCat = 'analytics';
+          } else if (h.includes('ad') || h.includes('doubleclick') || h.includes('pixel') || h.includes('adsystem') || h.includes('adnxs') || h.includes('pubmatic') || h.includes('rubiconproject') || h.includes('adservice')) {
+            topCat = 'advertising';
+          } else if (h.includes('track') || h.includes('beacon') || h.includes('collect') || h.includes('logger') || h.includes('telemetry')) {
+            topCat = 'tracking';
+          } else if (h.includes('cdn') || h.includes('static') || h.includes('assets') || h.includes('akamai') || h.includes('cloudfront') || h.includes('fastly') || h.includes('gstatic') || h.includes('images') || h.includes('edge')) {
+            topCat = 'cdn';
+          } else {
+            let maxCount = 0;
+            const subKeys = Object.keys(g.subdomains || {});
+            subKeys.forEach(sub => {
+              const info = g.subdomains[sub];
+              Object.keys(info.categories || {}).forEach(cat => {
+                if ((info.categories[cat] || 0) > maxCount) { maxCount = info.categories[cat]; topCat = cat; }
+              });
+            });
+          }
+
+          const totalCount = groupKeys.length;
+          const angleStep = (2 * Math.PI) / Math.min(totalCount, maxNodes);
+          const angle = idx * angleStep - Math.PI / 2;
+          const ring = placed < 7 ? 105 : 155;
+
+          const nx = W / 2 + Math.cos(angle) * ring;
+          const ny = H / 2 + Math.sin(angle) * ring;
+          const subKeys = Object.keys(g.subdomains || {});
+          const reqCount = subKeys.reduce((s, sub) => s + (g.subdomains[sub].count || 0), 0);
+          const r = Math.min(7 + reqCount * 0.35, 15);
+
+          nodes.push({
+            id: mainDomain, label: mainDomain,
+            x: nx + (Math.random() - 0.5) * 20, y: ny + (Math.random() - 0.5) * 20,
+            vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
+            r, color: catColors[topCat] || '#64748b',
+            pulse: 0, cat: topCat, reqCount, fixed: false
+          });
+          edges.push({ from: 'root', to: mainDomain, cat: topCat });
+          placed++;
+        });
+      }
+    } else if (rawDomains.length > 0) {
+      // Fallback: use raw domain list with generic categorization
+      rawDomains.slice(0, maxNodes).forEach((dom, idx) => {
+        const h = dom.toLowerCase();
+        let cat = 'other';
+        if (h.includes('analytics') || h.includes('gtag') || h.includes('stat') || h.includes('mixpanel') || h.includes('scorecardresearch')) cat = 'analytics';
+        else if (h.includes('ad') || h.includes('doubleclick') || h.includes('pixel') || h.includes('adsystem') || h.includes('adnxs') || h.includes('pubmatic') || h.includes('rubiconproject') || h.includes('adservice')) cat = 'advertising';
+        else if (h.includes('track') || h.includes('beacon') || h.includes('collect') || h.includes('logger') || h.includes('telemetry')) cat = 'tracking';
+        else if (h.includes('cdn') || h.includes('static') || h.includes('assets') || h.includes('akamai') || h.includes('cloudfront') || h.includes('fastly') || h.includes('gstatic') || h.includes('images') || h.includes('edge')) cat = 'cdn';
+
+        const totalCount = Math.min(rawDomains.length, maxNodes);
+        const angle = (idx / totalCount) * 2 * Math.PI - Math.PI / 2;
+        const ring = idx < 7 ? 100 : 148;
+        nodes.push({
+          id: dom, label: dom,
+          x: W / 2 + Math.cos(angle) * ring, y: H / 2 + Math.sin(angle) * ring,
+          vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
+          r: 8, color: catColors[cat] || '#64748b',
+          pulse: 0, cat, reqCount: 1, fixed: false
+        });
+        edges.push({ from: 'root', to: dom, cat });
+      });
+    }
+    // else: no third-party data — will show clean state overlay
+
+    _mapNodes = nodes;
+    _mapEdges = edges;
+
+    const totalConnections = net.thirdPartyRequests || rawDomains.length || 0;
+    const totalDomains = net.thirdPartyDomainsCount || rawDomains.length || 0;
+    const isClean = totalDomains === 0;
+
+    // Tooltip
+    const tooltip = document.getElementById('network-map-tooltip');
+    let hoveredNode = null;
+
+    function nodeAt(mx, my) {
+      return _mapNodes.find(n => Math.hypot(n.x - mx, n.y - my) < n.r + 5);
+    }
+
+    canvas.onmousemove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+
+      if (_mapDrag) { _mapDrag.x = mx; _mapDrag.y = my; _mapDrag.fixed = true; return; }
+
+      const node = nodeAt(mx, my);
+      if (node !== hoveredNode) {
+        hoveredNode = node;
+        if (node && tooltip) {
+          const catLabel = { analytics: 'Analytics tracker', advertising: 'Ad network', tracking: 'Tracking beacon', cdn: 'CDN / Static assets', other: 'Third-party domain', root: 'This Site' }[node.cat] || 'Domain';
+          const reqInfo = node.reqCount > 0 && node.id !== 'root' ? `<br><span style="color:#94a3b8;">${node.reqCount} request${node.reqCount !== 1 ? 's' : ''}</span>` : '';
+          tooltip.innerHTML = `<strong>${escapeHtml(node.label)}</strong><br><span style="color:#94a3b8;">${catLabel}</span>${reqInfo}`;
+          tooltip.classList.remove('hidden');
+          tooltip.style.left = Math.min(e.clientX - rect.left + 10, rect.width - 190) + 'px';
+          tooltip.style.top = Math.max(e.clientY - rect.top - 40, 4) + 'px';
+          canvas.style.cursor = 'pointer';
+        } else {
+          if (tooltip) tooltip.classList.add('hidden');
+          canvas.style.cursor = 'grab';
+        }
+      } else if (hoveredNode && tooltip) {
+        tooltip.style.left = Math.min(e.clientX - rect.left + 10, rect.width - 190) + 'px';
+        tooltip.style.top = Math.max(e.clientY - rect.top - 40, 4) + 'px';
+      }
+    };
+    canvas.onmousedown = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const node = nodeAt((e.clientX - rect.left) * (W / rect.width), (e.clientY - rect.top) * (H / rect.height));
+      if (node) { _mapDrag = node; canvas.style.cursor = 'grabbing'; }
+    };
+    canvas.onmouseup = () => { if (_mapDrag) { _mapDrag.fixed = false; _mapDrag = null; } canvas.style.cursor = 'grab'; };
+    canvas.onmouseleave = () => { if (tooltip) tooltip.classList.add('hidden'); hoveredNode = null; };
+
+    let tick = 0;
+
+    // Calculate Privacy Footprint Assessment metrics
+    let numTrackersAndAds = 0;
+    let numCdns = 0;
+    let numOthers = 0;
+
+    edges.forEach(edge => {
+      const n = nodes.find(x => x.id === edge.to);
+      const reqs = n ? n.reqCount : 1;
+      if (edge.cat === 'analytics' || edge.cat === 'advertising' || edge.cat === 'tracking') {
+        numTrackersAndAds += reqs;
+      } else if (edge.cat === 'cdn') {
+        numCdns += reqs;
+      } else {
+        numOthers += reqs;
+      }
+    });
+
+    const totalWeight = numTrackersAndAds + numCdns + numOthers || 1;
+    const pctTrackers = Math.round((numTrackersAndAds / totalWeight) * 100);
+    const pctCdn = Math.round((numCdns / totalWeight) * 100);
+    const pctOther = 100 - pctTrackers - pctCdn;
+
+    const pctTrackersEl = document.getElementById('pct-trackers');
+    const pctCdnEl = document.getElementById('pct-cdn');
+    const pctOtherEl = document.getElementById('pct-other');
+    const fillTrackersEl = document.getElementById('fill-trackers');
+    const fillCdnEl = document.getElementById('fill-cdn');
+    const fillOtherEl = document.getElementById('fill-other');
+
+    if (pctTrackersEl) pctTrackersEl.textContent = pctTrackers + '%';
+    if (pctCdnEl) pctCdnEl.textContent = pctCdn + '%';
+    if (pctOtherEl) pctOtherEl.textContent = Math.max(0, pctOther) + '%';
+    if (fillTrackersEl) fillTrackersEl.style.width = pctTrackers + '%';
+    if (fillCdnEl) fillCdnEl.style.width = pctCdn + '%';
+    if (fillOtherEl) fillOtherEl.style.width = Math.max(0, pctOther) + '%';
+
+    // Privacy grading
+    let grade = 'A+';
+    let gradeColor = '#059669';
+    let gradeBg = '#ecfdf5';
+    let briefing = '';
+
+    if (isClean || totalDomains === 0) {
+      grade = 'A+';
+      gradeColor = '#059669';
+      gradeBg = '#ecfdf5';
+      briefing = '✓ Excellent privacy profile. No third-party trackers or external requests were detected. Your activities on this page are completely private.';
+    } else {
+      if (pctTrackers === 0) {
+        grade = 'A';
+        gradeColor = '#059669';
+        gradeBg = '#ecfdf5';
+        briefing = '✓ Strong privacy profile. Some third-party connections are present for styling or content delivery (CDNs), but no tracking networks or advertisers were found.';
+      } else if (pctTrackers < 10) {
+        grade = 'B';
+        gradeColor = '#2563eb';
+        gradeBg = '#eff6ff';
+        briefing = '⚠ Good privacy profile. A small fraction of requests are sent to analytics networks. Most connections are for secure content delivery (CDNs).';
+      } else if (pctTrackers < 25) {
+        grade = 'C';
+        gradeColor = '#d97706';
+        gradeBg = '#fffbeb';
+        briefing = '⚠ Moderate privacy risk. The page has active tracking beacons or analytics networks monitoring user engagement. Enable Shield to restrict them.';
+      } else if (pctTrackers < 50) {
+        grade = 'D';
+        gradeColor = '#ea580c';
+        gradeBg = '#fff7ed';
+        briefing = '🚨 Elevated privacy risk. Up to a third of all background connections represent advertisers and user-profiling networks. Enabling Shield is strongly recommended.';
+      } else {
+        grade = 'F';
+        gradeColor = '#dc2626';
+        gradeBg = '#fef2f2';
+        briefing = '🚨 Critical privacy risk. Over half of the background network footprint consists of tracking beacons and ad servers. Your browsing on this page is highly profiled.';
+      }
+    }
+
+    const gradeEl = document.getElementById('privacy-grade');
+    const briefingEl = document.getElementById('privacy-briefing');
+    if (gradeEl) {
+      gradeEl.textContent = grade;
+      gradeEl.style.color = gradeColor;
+      gradeEl.style.backgroundColor = gradeBg;
+    }
+    if (briefingEl) {
+      briefingEl.textContent = briefing;
+    }
+
+    function simulate() {
+      const REPEL = 3200, ATTRACT = 0.022, CENTER = 0.004, DAMPING = 0.86, LINK_REST = 115;
+
+      for (let i = 0; i < _mapNodes.length; i++) {
+        const n = _mapNodes[i];
+        if (n.fixed || n === _mapDrag) continue;
+        let fx = 0, fy = 0;
+
+        for (let j = 0; j < _mapNodes.length; j++) {
+          if (i === j) continue;
+          const m = _mapNodes[j];
+          const dx = n.x - m.x, dy = n.y - m.y;
+          const dist = Math.max(Math.hypot(dx, dy), 1);
+          const force = REPEL / (dist * dist);
+          fx += (dx / dist) * force; fy += (dy / dist) * force;
+        }
+
+        _mapEdges.forEach(edge => {
+          let other = null;
+          if (edge.from === n.id) other = _mapNodes.find(x => x.id === edge.to);
+          else if (edge.to === n.id) other = _mapNodes.find(x => x.id === edge.from);
+          if (!other) return;
+          const dx = other.x - n.x, dy = other.y - n.y;
+          const dist = Math.max(Math.hypot(dx, dy), 1);
+          const stretch = dist - LINK_REST;
+          fx += (dx / dist) * stretch * ATTRACT; fy += (dy / dist) * stretch * ATTRACT;
+        });
+
+        fx += (W / 2 - n.x) * CENTER; fy += (H / 2 - n.y) * CENTER;
+        n.vx = (n.vx + fx) * DAMPING; n.vy = (n.vy + fy) * DAMPING;
+        n.x = Math.max(n.r + 4, Math.min(W - n.r - 4, n.x + n.vx));
+        n.y = Math.max(n.r + 4, Math.min(H - n.r - 4, n.y + n.vy));
+      }
+
+      // Update particles
+      _mapParticles = _mapParticles.filter(p => {
+        p.progress += p.speed;
+        return p.progress < 1;
+      });
+    }
+
+    function render() {
+      tick++;
+      ctx.clearRect(0, 0, W, H);
+
+      // Background
+      const bgGrad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.6);
+      bgGrad.addColorStop(0, '#f8faff'); bgGrad.addColorStop(1, '#eef0f4');
+      ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+
+      if (isClean) {
+        // Clean site: show a beautiful "no connections" state
+        const pulse = 0.5 + 0.5 * Math.sin(tick * 0.03);
+        // Concentric rings
+        for (let ring = 3; ring >= 1; ring--) {
+          ctx.beginPath();
+          ctx.arc(W/2, H/2, 30 + ring * 28 + pulse * 8, 0, 2*Math.PI);
+          ctx.strokeStyle = `rgba(37,99,235,${0.06 * (4 - ring)})`;
+          ctx.lineWidth = 1; ctx.stroke();
+        }
+        // Root node (glowing)
+        const rootNode = _mapNodes[0];
+        rootNode.pulse = (rootNode.pulse + 0.04) % (2*Math.PI);
+        const pr = rootNode.r * (1 + 0.12 * Math.sin(rootNode.pulse));
+        const glow = ctx.createRadialGradient(W/2, H/2, pr*0.3, W/2, H/2, pr*3);
+        glow.addColorStop(0, rootColor + '60'); glow.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(W/2, H/2, pr*3, 0, 2*Math.PI); ctx.fillStyle = glow; ctx.fill();
+        ctx.beginPath(); ctx.arc(W/2, H/2, pr, 0, 2*Math.PI);
+        const ng = ctx.createRadialGradient(W/2-pr*0.3, H/2-pr*0.3, pr*0.1, W/2, H/2, pr);
+        ng.addColorStop(0, lightenColor(rootColor, 50)); ng.addColorStop(1, rootColor);
+        ctx.fillStyle = ng; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+        // Label
+        ctx.font = '600 9px Inter, sans-serif'; ctx.fillStyle = '#1e293b'; ctx.textAlign = 'center';
+        const rl = rootNode.label.length > 16 ? rootNode.label.substring(0,15)+'…' : rootNode.label;
+        ctx.fillText(rl, W/2, H/2 + pr + 13);
+        // Overlay text
+        ctx.font = '700 13px Inter, sans-serif'; ctx.fillStyle = '#059669'; ctx.textAlign = 'center';
+        ctx.fillText('✓ Clean Connection Profile', W/2, H/2 + 70);
+        ctx.font = '500 9px Inter, sans-serif'; ctx.fillStyle = '#64748b';
+        ctx.fillText('No third-party trackers detected on this page', W/2, H/2 + 86);
+        return;
+      }
+
+      // Periodically spawn particles on random edges
+      if (_mapEdges.length > 0 && Math.random() < 0.05) {
+        const edge = _mapEdges[Math.floor(Math.random() * _mapEdges.length)];
+        const isSafeCdn = edge.cat === 'cdn';
+        _mapParticles.push({
+          from: isSafeCdn ? edge.to : 'root',
+          to: isSafeCdn ? 'root' : edge.to,
+          progress: 0,
+          speed: 0.008 + Math.random() * 0.012,
+          cat: edge.cat
+        });
+      }
+
+      // Draw edges
+      _mapEdges.forEach(edge => {
+        const fn = _mapNodes.find(n => n.id === edge.from);
+        const tn = _mapNodes.find(n => n.id === edge.to);
+        if (!fn || !tn) return;
+        const catEdgeColors = { analytics: 'rgba(217,119,6,0.3)', advertising: 'rgba(234,88,12,0.3)', tracking: 'rgba(124,58,237,0.3)', cdn: 'rgba(8,145,178,0.25)', other: 'rgba(100,116,132,0.2)' };
+        ctx.beginPath(); ctx.moveTo(fn.x, fn.y); ctx.lineTo(tn.x, tn.y);
+        ctx.strokeStyle = catEdgeColors[edge.cat] || 'rgba(150,160,180,0.25)';
+        ctx.lineWidth = 1.2; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -(tick * 0.25); ctx.stroke(); ctx.setLineDash([]);
+      });
+
+      // Draw particles
+      _mapParticles.forEach(p => {
+        const fromNode = _mapNodes.find(n => n.id === p.from);
+        const toNode = _mapNodes.find(n => n.id === p.to);
+        if (!fromNode || !toNode) return;
+        const px = fromNode.x + (toNode.x - fromNode.x) * p.progress;
+        const py = fromNode.y + (toNode.y - fromNode.y) * p.progress;
+        const catColors = { analytics: '#d97706', advertising: '#ea580c', tracking: '#7c3aed', other: '#64748b', cdn: '#0891b2' };
+        const color = catColors[p.cat] || '#64748b';
+        ctx.beginPath(); ctx.arc(px, py, 2.2, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 3;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Draw nodes
+      _mapNodes.forEach(node => {
+        const isRoot = node.id === 'root';
+        node.pulse = (node.pulse + (isRoot ? 0.04 : 0.015)) % (2 * Math.PI);
+        const pm = isRoot ? 1 + 0.12 * Math.sin(node.pulse) : 1;
+        const r = node.r * pm;
+
+        const glow = ctx.createRadialGradient(node.x, node.y, r*0.3, node.x, node.y, r*2.8);
+        glow.addColorStop(0, node.color + (isRoot ? '55' : '28')); glow.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(node.x, node.y, r*2.8, 0, 2*Math.PI); ctx.fillStyle = glow; ctx.fill();
+
+        ctx.beginPath(); ctx.arc(node.x, node.y, r, 0, 2*Math.PI);
+        const ng = ctx.createRadialGradient(node.x-r*0.3, node.y-r*0.3, r*0.1, node.x, node.y, r);
+        ng.addColorStop(0, lightenColor(node.color, 45)); ng.addColorStop(1, node.color);
+        ctx.fillStyle = ng; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = isRoot ? 2.5 : 1.5; ctx.stroke();
+
+        ctx.font = `${isRoot ? '700' : '500'} ${isRoot ? 9 : 8}px Inter, sans-serif`;
+        ctx.fillStyle = '#1e293b'; ctx.textAlign = 'center';
+        const label = node.label.length > 15 ? node.label.substring(0, 14) + '…' : node.label;
+        ctx.fillText(label, node.x, node.y + r + 12);
+      });
+
+      // Stat overlay (top-left corner)
+      ctx.fillStyle = 'rgba(15,23,42,0.62)';
+      ctx.beginPath();
+      roundRect(ctx, 8, 8, 148, 34, 6);
+      ctx.fill();
+      ctx.font = '600 10px Inter, sans-serif'; ctx.fillStyle = '#f8fafc'; ctx.textAlign = 'left';
+      ctx.fillText(`${totalConnections} reqs · ${totalDomains} domains`, 16, 22);
+      ctx.font = '500 8px Inter, sans-serif'; ctx.fillStyle = '#94a3b8';
+      ctx.fillText('Third-party network activity', 16, 35);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+      ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+      ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    }
+
+    function loop() { simulate(); render(); _mapAnimFrame = requestAnimationFrame(loop); }
+    loop();
+  }
+
+  function lightenColor(hex, amount) {
+    try {
+      const num = parseInt(hex.replace('#',''), 16);
+      const r = Math.min(255, (num >> 16) + amount);
+      const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+      const b = Math.min(255, (num & 0xff) + amount);
+      return `rgb(${r},${g},${b})`;
+    } catch { return hex; }
+  }
+  // ===== END NETWORK MAP =====
 
   function updateCredentialAnalysis(telemetry) {
     const section = document.getElementById('section-credentials');
@@ -796,7 +1442,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetTab = btn.getAttribute('data-tab');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === targetTab));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.getAttribute('id') === 'tab-' + targetTab));
+        document.body.classList.toggle('network-map-mode', targetTab === 'network-map');
         if (targetTab === 'history') loadHistory();
+        if (targetTab === 'network-map' && _lastNetworkData) {
+          drawNetworkMap(_lastNetworkData, _lastRootDomain, _lastVerdict);
+        }
       });
     });
   }
@@ -851,6 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (_) {}
     if (!settings.whitelist) settings.whitelist = [];
 
+    // Bind toggle events once
     const bindToggle = (id, key) => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -858,19 +1509,12 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('change', (e) => {
         settings[key] = e.target.checked;
         saveSettings(settings);
-        if (key === 'realtime') {
-          if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.set({ sitesentinel_settings: settings });
-          }
-        }
       });
     };
-
     bindToggle('toggle-realtime', 'realtime');
     bindToggle('toggle-deep-scan', 'deepScan');
 
-    // Whitelist
-    renderWhitelist(settings.whitelist);
+    // Bind Add button once
     const whitelistInput = document.getElementById('input-whitelist-domain');
     const addBtn = document.getElementById('btn-add-whitelist');
     if (addBtn && whitelistInput) {
@@ -890,6 +1534,24 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // Initial render
+    renderWhitelist(settings.whitelist);
+
+    // Sync whitelist from chrome.storage.local (background.js may have
+    // added domains via "Don't warn again")
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.get(['sitesentinel_settings'], (result) => {
+        if (result.sitesentinel_settings) {
+          const bgWhitelist = result.sitesentinel_settings.whitelist || [];
+          const merged = [...new Set([...settings.whitelist, ...bgWhitelist])];
+          if (merged.length !== settings.whitelist.length) {
+            settings.whitelist = merged;
+            localStorage.setItem('sitesentinel_settings', JSON.stringify(settings));
+            renderWhitelist(settings.whitelist);
+          }
+        }
+      });
+    }
   }
 
   function renderWhitelist(whitelist) {

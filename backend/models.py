@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Any
+from typing import Any
 
 
 class UrlAnalyzePayload(BaseModel):
@@ -9,4 +9,3 @@ class UrlAnalyzePayload(BaseModel):
 
 class TelemetryAnalyzePayload(BaseModel):
     telemetry: dict[str, Any] = {}
-    screenshot: Optional[str] = None

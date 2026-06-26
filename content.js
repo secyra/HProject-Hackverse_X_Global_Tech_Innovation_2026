@@ -37,7 +37,7 @@ const SUSPICIOUS_DOMAIN_PATTERNS = [
   /microsoft.*\.(?:xyz|top|club|gq|ml|tk|ga)/i,
   /\b(?:secure|account|verify|signin|login|update|confirm)\b.*\.(?:xyz|top|club|gq|ml|tk|cf|ga)\b/i,
   /^\w{8,12}\.(?:xyz|top|club|gq|ml|tk|cf|ga)$/i,
-  /(?:paypa1|paypaI|arnazon|arnaz0n|netf1ix|g00gle|faceb00k|micros0ft|app1e|whatsapp|instagrarn|rnitflix)/i
+  /(?:paypa1|paypaI|arnazon|arnaz0n|netf1ix|g00gle|faceb00k|micros0ft|app1e|vvhatsapp|whataspp|whatapp|instagrarn|rnitflix)/i
 ];
 
 const KNOWN_PHISHING_KEYWORDS_IN_URL = [
@@ -186,11 +186,16 @@ async function runAnalysis() {
 
     try {
       const actionUrl = new URL(absoluteAction);
-      if (actionUrl.hostname !== window.location.hostname) {
+      const actionMainDomain = getMainDomain(actionUrl.hostname);
+      const pageMainDomain = getMainDomain(window.location.hostname);
+
+      if (actionMainDomain !== pageMainDomain) {
         externalFormActions++;
         formActionHosts.push(actionUrl.hostname);
 
-        if (KNOWN_PHISHING_KEYWORDS_IN_URL.some(kw => actionUrl.pathname.toLowerCase().includes(kw))) {
+        // Only flag as suspicious if the *action domain itself* looks phishy
+        if (SUSPICIOUS_DOMAIN_PATTERNS.some(pat => pat.test(actionUrl.hostname)) ||
+            KNOWN_PHISHING_KEYWORDS_IN_URL.some(kw => actionUrl.pathname.toLowerCase().includes(kw))) {
           suspiciousFormActions.push(absoluteAction);
         }
       }
@@ -379,7 +384,10 @@ async function runAnalysis() {
         shortenedUrls++;
       }
 
-      if (urlObj.hostname === window.location.hostname) {
+      const linkMainDomain = getMainDomain(urlObj.hostname);
+      const pageMainDomain = getMainDomain(window.location.hostname);
+
+      if (linkMainDomain === pageMainDomain) {
         internalLinks++;
       } else {
         externalLinks++;
@@ -398,9 +406,7 @@ async function runAnalysis() {
         }
 
         const hostname = urlObj.hostname.toLowerCase();
-        const fullUrl = absoluteUrl.toLowerCase();
-
-        const isSuspicious = SUSPICIOUS_DOMAIN_PATTERNS.some(pattern => pattern.test(hostname) || pattern.test(fullUrl));
+        const isSuspicious = SUSPICIOUS_DOMAIN_PATTERNS.some(pattern => pattern.test(hostname));
         if (isSuspicious && suspiciousExternalLinks.length < 20) {
           suspiciousExternalLinks.push(absoluteUrl);
           suspiciousLinkDomains.push(hostname);
