@@ -17,7 +17,7 @@ from slowapi.errors import RateLimitExceeded
 from models import UrlAnalyzePayload, TelemetryAnalyzePayload
 from domain_info import get_domain_trust_profile
 
-app = FastAPI(title="Site Sentinel Backend")
+app = FastAPI(title="Spectra Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -126,7 +126,7 @@ def run_gemini_analysis(pre_score, flagged_issues, telemetry):
 @app.get("/health")
 def health_check():
     ai_status = "available" if USE_GEMINI else "disabled (set GEMINI_API_KEY to enable)"
-    return {"status": "ok", "version": "2.0", "message": "Site Sentinel backend is running", "ai": ai_status}
+    return {"status": "ok", "version": "2.0", "message": "Spectra backend is running", "ai": ai_status}
 
 
 @app.post("/trust-profile")

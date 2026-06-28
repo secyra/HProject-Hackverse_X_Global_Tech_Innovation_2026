@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.session.get([key], (result) => {
       const cached = result[key];
       if (!cached || !cached.scanResult) {
-        console.log('[SiteSentinel] No cached scan for', domain);
+        console.log('[Spectra] No cached scan for', domain);
         return;
       }
-      console.log('[SiteSentinel] Restoring cached scan for', domain);
+      console.log('[Spectra] Restoring cached scan for', domain);
       showResults(cached.scanResult, cached.telemetry || {}, cached.deepResult || null);
       if (domain && domain !== 'N/A') {
         fetchAndShowTrustProfile(domain);
@@ -42,6 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-start-scan').addEventListener('click', startUnifiedScan);
   // Rescan button
   document.getElementById('btn-rescan').addEventListener('click', startUnifiedScan);
+
+  // Cancel Scan button
+  const cancelScanBtn = document.getElementById('btn-cancel-scan');
+  if (cancelScanBtn) {
+    cancelScanBtn.addEventListener('click', () => {
+      const overlay = document.getElementById('scan-loading-overlay');
+      if (overlay) overlay.classList.add('hidden');
+    });
+  }
 
   // Wire up collapsible evidence sections
   document.querySelectorAll('.evidence-header').forEach(header => {
@@ -62,15 +71,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function startUnifiedScan() {
-    console.log('[SiteSentinel] Scan Again clicked — starting fresh scan');
-    if (!activeTabInfo) { console.log('[SiteSentinel] No active tab info, aborting'); return; }
+    console.log('[Spectra] starting unified scan');
+    if (!activeTabInfo) { console.log('[Spectra] No active tab info, aborting'); return; }
 
     const overlay = document.getElementById('scan-loading-overlay');
     const loadingText = document.getElementById('loading-text');
+    const progressFill = document.getElementById('scan-progress-bar');
+    const progressPct = document.getElementById('scan-pct-badge');
     overlay.classList.remove('hidden');
 
+    const updateProgress = (pct, text) => {
+      if (loadingText) loadingText.textContent = text;
+      if (progressFill) progressFill.style.width = pct + '%';
+      if (progressPct) progressPct.textContent = pct + '% Complete';
+    };
+
     // Step 1: Collect DOM telemetry
-    loadingText.textContent = 'Collecting page data...';
+    updateProgress(20, 'Collecting page data...');
     let telemetry = await collectTelemetry();
     if (!telemetry) {
       telemetry = {
@@ -84,14 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
     activeTelemetry = telemetry;
 
     // Step 2: Collect network telemetry
-    loadingText.textContent = 'Analyzing network requests...';
+    updateProgress(45, 'Analyzing network requests...');
     const netTelemetry = await getNetworkTelemetry(activeTabInfo.id);
     if (netTelemetry) {
       telemetry.network = netTelemetry;
     }
 
     // Step 3: Send to backend for analysis
-    loadingText.textContent = 'Running security analysis...';
+    updateProgress(70, 'Running security analysis...');
     const scanResult = await analyzePage(telemetry);
 
     // Step 4: Run deep scan
@@ -103,10 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
         settings = JSON.parse(stored);
       }
       if (settings.deepScan !== false && activeTabInfo.url) {
-        loadingText.textContent = 'Crawling site pages...';
+        updateProgress(90, 'Crawling site pages...');
         deepResult = await runDeepScan(activeTabInfo.url);
       }
     } catch (_) {}
+
+    updateProgress(100, 'Scan complete!');
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     overlay.classList.add('hidden');
 

@@ -1,5 +1,3 @@
-try { importScripts('shield-domains.js'); } catch (e) { console.warn('[Shield] Failed to load shield-domains:', e); }
-
 const tabTelemetry = {};
 
 const SHIELD_RULE_PRIORITY = 1;
@@ -49,25 +47,29 @@ async function installShieldRules() {
     return;
   }
   try {
+    const settings = await loadSettings();
+    const whitelist = settings.whitelist || [];
     const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
     const existingIds = existingRules.map(r => r.id);
-    const rules = TRACKER_DOMAINS.map((domain, i) => ({
-      id: SHIELD_RULE_ID_OFFSET + i,
-      priority: SHIELD_RULE_PRIORITY,
-      action: { type: 'block' },
-      condition: {
-        urlFilter: '||' + domain + '^',
-        resourceTypes: [
-          'script', 'image', 'stylesheet', 'xmlhttprequest',
-          'sub_frame', 'media', 'font', 'websocket', 'other'
-        ]
-      }
-    }));
+    const rules = TRACKER_DOMAINS
+      .filter(domain => !whitelist.some(w => domain === w || domain.endsWith('.' + w)))
+      .map((domain, i) => ({
+        id: SHIELD_RULE_ID_OFFSET + i,
+        priority: SHIELD_RULE_PRIORITY,
+        action: { type: 'block' },
+        condition: {
+          urlFilter: '||' + domain + '^',
+          resourceTypes: [
+            'script', 'image', 'stylesheet', 'xmlhttprequest',
+            'sub_frame', 'media', 'font', 'websocket', 'other'
+          ]
+        }
+      }));
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: existingIds,
       addRules: rules
     });
-    console.log('[Shield] Installed ' + rules.length + ' DNR block rules');
+    console.log('[Shield] Installed ' + rules.length + ' DNR block rules (whitelist filtered)');
   } catch (e) {
     console.warn('[Shield] Failed to install DNR rules:', e);
   }
@@ -106,6 +108,8 @@ async function aiClassifyDomain(domain) {
 
 async function blockDomainViaAI(domain, tabId) {
   if (!shieldEnabled) return;
+  const settings = await loadSettings();
+  if (isWhitelisted(domain, settings)) return;
   const result = await aiClassifyDomain(domain);
   if (!result || !result.should_block) return;
   try {
@@ -231,10 +235,10 @@ function checkUrlPhishingRisk(url) {
 
 function getBadgeParams(risk) {
   switch (risk) {
-    case 'high': return { text: '!', color: '#dc2626', title: 'Site Sentinel: Phishing risk detected' };
-    case 'medium': return { text: '?', color: '#d97706', title: 'Site Sentinel: Suspicious site' };
-    case 'low': return { text: '', color: '', title: 'Site Sentinel: Active' };
-    default: return { text: '', color: '', title: 'Site Sentinel' };
+    case 'high': return { text: '!', color: '#dc2626', title: 'Spectra: Phishing risk detected' };
+    case 'medium': return { text: '?', color: '#d97706', title: 'Spectra: Suspicious site' };
+    case 'low': return { text: '', color: '', title: 'Spectra: Active' };
+    default: return { text: '', color: '', title: 'Spectra' };
   }
 }
 
@@ -394,6 +398,9 @@ chrome.webRequest.onBeforeRequest.addListener(
   },
   { urls: ["<all_urls>"] }
 );
+
+// Initialize shield on background page load
+initShieldRules();
 
 chrome.runtime.onInstalled.addListener(() => {
   initShieldRules();

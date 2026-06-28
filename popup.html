@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://127.0.0.1:8000; img-src 'self' data:; script-src 'self';">
-  <title>Site Sentinel</title>
+  <title>Spectra</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -104,24 +104,9 @@
       gap: 9px;
     }
 
-    .logo-shield {
-      width: 26px;
-      height: 26px;
-      background: linear-gradient(135deg, #b8860b, #c9a227);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #0c0e1a;
-      flex-shrink: 0;
-    }
-
-    .logo-shield svg {
-      width: 14px;
-      height: 14px;
-      stroke: currentColor;
-      stroke-width: 2.5;
-      fill: none;
+    .logo-img {
+      height: 24px;
+      width: auto;
     }
 
     .logo-text {
@@ -580,6 +565,189 @@
       color: var(--text-secondary);
     }
 
+    /* Radar Scanning Animation */
+    .radar-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 220px;
+      position: relative;
+      margin-bottom: 24px;
+      margin-top: 10px;
+    }
+
+    .radar-circle {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 1px dashed rgba(201, 162, 39, 0.15);
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-circle-mid {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(201, 162, 39, 0.08);
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-circle-inner {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: rgba(201, 162, 39, 0.08);
+      border: 1px solid rgba(201, 162, 39, 0.2);
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 15px rgba(201, 162, 39, 0.1);
+    }
+
+    .radar-sweep {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, rgba(201, 162, 39, 0.15) 0deg, transparent 90deg, transparent 360deg);
+      position: absolute;
+      animation: rotate-radar 2.5s linear infinite;
+    }
+
+    .radar-dot-active {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--safe);
+      position: absolute;
+      top: 10px;
+      box-shadow: 0 0 10px var(--safe);
+      animation: pulse-green 1s infinite alternate;
+    }
+
+    .radar-dot-ambient {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #c9a227;
+      position: absolute;
+      right: 20px;
+      bottom: 40px;
+      box-shadow: 0 0 8px #c9a227;
+      opacity: 0.7;
+    }
+
+    .radar-shield-icon {
+      width: 32px;
+      height: 32px;
+      color: var(--accent-text);
+      animation: pulse-shield 1.5s infinite alternate;
+    }
+
+    @keyframes rotate-radar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse-shield {
+      from { transform: scale(0.95); opacity: 0.8; }
+      to { transform: scale(1.05); opacity: 1; }
+    }
+
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Cancel analysis button */
+    .cancel-btn {
+      width: 100%;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      margin-top: 16px;
+    }
+
+    .cancel-btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    /* Progress bar styling */
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-lbl {
+      font-size: 13px;
+      color: var(--text-secondary);
+      max-width: 70%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .progress-pct {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(201, 162, 39, 0.15);
+      color: var(--accent-text);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .progress-line-container {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-line-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* Scanning list */
+    .scan-status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .scan-status-icon {
+      color: var(--safe-text);
+      display: flex;
+      align-items: center;
+    }
+
     .loading-overlay {
       position: absolute;
       top: 48px;
@@ -594,32 +762,6 @@
       align-items: center;
       justify-content: center;
       padding: 32px;
-    }
-
-    .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin-bottom: 16px;
-    }
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    .loading-text {
-      font-size: 11px;
-      color: var(--text-tertiary);
-      font-weight: 500;
     }
 
     .footer-nav {
@@ -856,12 +998,8 @@
   <!-- Header -->
   <div class="header">
     <div class="header-left">
-      <div class="logo-shield">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        </svg>
-      </div>
-      <span class="logo-text">Site Sentinel</span>
+      <img src="logo.png" alt="Spectra" class="logo-img">
+      <span class="logo-text">Spectra</span>
     </div>
   </div>
 
@@ -1344,10 +1482,67 @@
 
   </div>
 
-  <!-- Loading Overlay -->
+  <!-- Loading Overlay: Radar Scan Animation -->
   <div class="loading-overlay hidden" id="scan-loading-overlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text" id="loading-text">Scanning page...</div>
+
+    <!-- Spinning Radar visual -->
+    <div class="radar-container">
+      <div class="radar-circle"></div>
+      <div class="radar-circle-mid"></div>
+      <div class="radar-circle-inner">
+        <svg class="radar-shield-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+      <div class="radar-sweep"></div>
+      <div class="radar-dot-active"></div>
+      <div class="radar-dot-ambient"></div>
+    </div>
+
+    <!-- Deep System Analysis Progress Card -->
+    <div class="card" style="width:100%;">
+      <div class="progress-info">
+        <span style="font-size:16px; font-weight:700; color:var(--text-primary);">Deep System Analysis</span>
+        <span class="progress-pct" id="scan-pct-badge">0% Complete</span>
+      </div>
+
+      <div class="progress-lbl" id="loading-text" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; max-width:100%;">
+        Initializing scan...
+      </div>
+
+      <div class="progress-line-container">
+        <div class="progress-line-fill" id="scan-progress-bar" style="width: 0%;"></div>
+      </div>
+
+      <div class="scan-status-item">
+        <span class="scan-status-icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </span>
+        <span>Optimizing network path</span>
+      </div>
+
+      <div class="scan-status-item">
+        <span class="scan-status-icon" style="color: var(--accent-text);">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <span>Checking for handshake anomalies</span>
+      </div>
+    </div>
+
+    <button class="cancel-btn" id="btn-cancel-scan">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+      Cancel Analysis
+    </button>
+
   </div>
 
   <!-- Footer Navigation -->

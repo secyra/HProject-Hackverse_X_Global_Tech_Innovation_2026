@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Site Sentinel",
+  "name": "Spectra",
   "version": "2.2",
   "description": "Analyzes website privacy, behavior, and phishing risks with live telemetry, external link scanning, and data collection tracking.",
   "action": {
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["shield-domains.js", "background.js"]
   },
   "content_scripts": [
     {
@@ -21,7 +21,7 @@
         "default": "Ctrl+Shift+S",
         "mac": "Command+Shift+S"
       },
-      "description": "Scan current page with Site Sentinel"
+      "description": "Scan current page with Spectra"
     }
   },
   "permissions": [
