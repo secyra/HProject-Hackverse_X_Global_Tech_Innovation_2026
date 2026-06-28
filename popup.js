@@ -452,15 +452,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (result.verdict === 'dangerous') {
       title.textContent = 'High risk detected — proceed with caution';
       desc.textContent = result.description || 'Multiple critical security anomalies identified.';
-      scoreFill.style.background = '#dc2626';
+      scoreFill.style.background = 'var(--dangerous)';
     } else if (result.verdict === 'suspicious') {
       title.textContent = 'Some anomalies detected';
       desc.textContent = result.description || 'Several suspicious signals found on this page.';
-      scoreFill.style.background = '#f59e0b';
+      scoreFill.style.background = 'var(--suspicious)';
     } else {
       title.textContent = 'This site appears safe';
       desc.textContent = result.description || 'No significant threats detected.';
-      scoreFill.style.background = '#2563eb';
+      scoreFill.style.background = 'var(--safe)';
     }
 
     const displayScore = result.score || 100 - (result.threatScore || 0);
@@ -512,8 +512,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       deepPages.innerHTML = ds.pages.map((page, idx) => {
         const score = page.pre_score || 0;
-        const borderColor = score >= 60 ? '#dc2626' : score >= 30 ? '#d97706' : '#e2e8f0';
-        const labelColor = score >= 60 ? '#dc2626' : score >= 30 ? '#d97706' : '#10b981';
+        const borderColor = score >= 60 ? 'var(--dangerous)' : score >= 30 ? 'var(--suspicious)' : 'var(--border)';
+        const labelColor = score >= 60 ? 'var(--dangerous)' : score >= 30 ? 'var(--suspicious)' : 'var(--safe)';
         const labelText = score >= 60 ? 'High' : score >= 30 ? 'Med' : 'Low';
 
         let displayPath = '/';
@@ -606,9 +606,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ageEl) {
       ageEl.textContent = profile.age_description || 'Unavailable';
       if (profile.is_new_domain) {
-        ageEl.style.color = '#dc2626';
+        ageEl.style.color = 'var(--dangerous)';
       } else if (profile.age_description && profile.age_description !== 'Unavailable') {
-        ageEl.style.color = '#059669';
+        ageEl.style.color = 'var(--safe)';
       } else {
         ageEl.style.color = 'var(--text-primary)';
       }
@@ -617,27 +617,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (issuerEl) {
       const issuer = profile.ssl_issuer || 'Unavailable';
       issuerEl.textContent = issuer.length > 28 ? issuer.substring(0, 26) + '…' : issuer;
-      issuerEl.style.color = (issuer === 'Unavailable' || issuer === 'Unknown') ? '#f59e0b' : '#059669';
+      issuerEl.style.color = (issuer === 'Unavailable' || issuer === 'Unknown') ? 'var(--suspicious)' : 'var(--safe)';
     }
 
     if (validityEl) {
       const days = profile.ssl_days_remaining;
       if (days === null || days === undefined) {
         validityEl.textContent = 'Unknown';
-        validityEl.style.color = '#f59e0b';
+        validityEl.style.color = 'var(--suspicious)';
       } else if (days < 0) {
         validityEl.textContent = 'Expired!';
-        validityEl.style.color = '#dc2626';
+        validityEl.style.color = 'var(--dangerous)';
         validityEl.style.fontWeight = '800';
       } else if (days < 30) {
         validityEl.textContent = `⚠ Expires in ${days} day${days !== 1 ? 's' : ''}`;
-        validityEl.style.color = '#dc2626';
+        validityEl.style.color = 'var(--dangerous)';
       } else if (days < 90) {
         validityEl.textContent = `${days} days remaining`;
-        validityEl.style.color = '#f59e0b';
+        validityEl.style.color = 'var(--suspicious)';
       } else {
         validityEl.textContent = `${days} days remaining`;
-        validityEl.style.color = '#059669';
+        validityEl.style.color = 'var(--safe)';
       }
     }
   }
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const edges = [];
 
     // Root node color based on verdict
-    const rootColor = verdict === 'dangerous' ? '#dc2626' : verdict === 'suspicious' ? '#d97706' : '#2563eb';
+    const rootColor = verdict === 'dangerous' ? '#ef4444' : verdict === 'suspicious' ? '#fbbf24' : '#3b82f6';
 
     nodes.push({
       id: 'root',
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     _mapParticles = [];
 
-    const catColors = { analytics: '#d97706', advertising: '#ea580c', tracking: '#7c3aed', other: '#64748b', cdn: '#0891b2' };
+    const catColors = { analytics: '#fbbf24', advertising: '#f97316', tracking: '#a855f7', other: '#94a3b8', cdn: '#06b6d4' };
     const groups = net.domainGroups || {};
     const rawDomains = net.thirdPartyDomains || [];
     const groupKeys = Object.keys(groups);
@@ -900,40 +900,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Privacy grading
     let grade = 'A+';
-    let gradeColor = '#059669';
-    let gradeBg = '#ecfdf5';
+    let gradeColor = 'var(--safe)';
+    let gradeBg = 'var(--safe-bg)';
     let briefing = '';
 
     if (isClean || totalDomains === 0) {
       grade = 'A+';
-      gradeColor = '#059669';
-      gradeBg = '#ecfdf5';
+      gradeColor = 'var(--safe)';
+      gradeBg = 'var(--safe-bg)';
       briefing = '✓ Excellent privacy profile. No third-party trackers or external requests were detected. Your activities on this page are completely private.';
     } else {
       if (pctTrackers === 0) {
         grade = 'A';
-        gradeColor = '#059669';
-        gradeBg = '#ecfdf5';
+        gradeColor = 'var(--safe)';
+        gradeBg = 'var(--safe-bg)';
         briefing = '✓ Strong privacy profile. Some third-party connections are present for styling or content delivery (CDNs), but no tracking networks or advertisers were found.';
       } else if (pctTrackers < 10) {
         grade = 'B';
-        gradeColor = '#2563eb';
-        gradeBg = '#eff6ff';
+        gradeColor = 'var(--accent)';
+        gradeBg = 'var(--accent-bg)';
         briefing = '⚠ Good privacy profile. A small fraction of requests are sent to analytics networks. Most connections are for secure content delivery (CDNs).';
       } else if (pctTrackers < 25) {
         grade = 'C';
-        gradeColor = '#d97706';
-        gradeBg = '#fffbeb';
+        gradeColor = 'var(--suspicious)';
+        gradeBg = 'var(--suspicious-bg)';
         briefing = '⚠ Moderate privacy risk. The page has active tracking beacons or analytics networks monitoring user engagement. Enable Shield to restrict them.';
       } else if (pctTrackers < 50) {
         grade = 'D';
-        gradeColor = '#ea580c';
-        gradeBg = '#fff7ed';
+        gradeColor = '#f97316';
+        gradeBg = 'rgba(249, 115, 22, 0.12)';
         briefing = '🚨 Elevated privacy risk. Up to a third of all background connections represent advertisers and user-profiling networks. Enabling Shield is strongly recommended.';
       } else {
         grade = 'F';
-        gradeColor = '#dc2626';
-        gradeBg = '#fef2f2';
+        gradeColor = 'var(--dangerous)';
+        gradeBg = 'var(--dangerous-bg)';
         briefing = '🚨 Critical privacy risk. Over half of the background network footprint consists of tracking beacons and ad servers. Your browsing on this page is highly profiled.';
       }
     }
@@ -996,7 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Background
       const bgGrad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.6);
-      bgGrad.addColorStop(0, '#f8faff'); bgGrad.addColorStop(1, '#eef0f4');
+      bgGrad.addColorStop(0, '#12151f'); bgGrad.addColorStop(1, '#0c0e1a');
       ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
 
       if (isClean) {
@@ -1006,28 +1006,28 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let ring = 3; ring >= 1; ring--) {
           ctx.beginPath();
           ctx.arc(W/2, H/2, 30 + ring * 28 + pulse * 8, 0, 2*Math.PI);
-          ctx.strokeStyle = `rgba(37,99,235,${0.06 * (4 - ring)})`;
+          ctx.strokeStyle = `rgba(201,162,39,${0.05 * (4 - ring)})`;
           ctx.lineWidth = 1; ctx.stroke();
         }
-        // Root node (glowing)
+        // Root node
         const rootNode = _mapNodes[0];
         rootNode.pulse = (rootNode.pulse + 0.04) % (2*Math.PI);
-        const pr = rootNode.r * (1 + 0.12 * Math.sin(rootNode.pulse));
-        const glow = ctx.createRadialGradient(W/2, H/2, pr*0.3, W/2, H/2, pr*3);
-        glow.addColorStop(0, rootColor + '60'); glow.addColorStop(1, 'transparent');
-        ctx.beginPath(); ctx.arc(W/2, H/2, pr*3, 0, 2*Math.PI); ctx.fillStyle = glow; ctx.fill();
+        const pr = rootNode.r * (1 + 0.08 * Math.sin(rootNode.pulse));
+        const glow = ctx.createRadialGradient(W/2, H/2, pr*0.3, W/2, H/2, pr*2);
+        glow.addColorStop(0, rootColor + '20'); glow.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(W/2, H/2, pr*2, 0, 2*Math.PI); ctx.fillStyle = glow; ctx.fill();
         ctx.beginPath(); ctx.arc(W/2, H/2, pr, 0, 2*Math.PI);
         const ng = ctx.createRadialGradient(W/2-pr*0.3, H/2-pr*0.3, pr*0.1, W/2, H/2, pr);
-        ng.addColorStop(0, lightenColor(rootColor, 50)); ng.addColorStop(1, rootColor);
-        ctx.fillStyle = ng; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+        ng.addColorStop(0, lightenColor(rootColor, 30)); ng.addColorStop(1, rootColor);
+        ctx.fillStyle = ng; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
         // Label
-        ctx.font = '600 9px Inter, sans-serif'; ctx.fillStyle = '#1e293b'; ctx.textAlign = 'center';
+        ctx.font = "600 9px 'Space Grotesk', sans-serif"; ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'center';
         const rl = rootNode.label.length > 16 ? rootNode.label.substring(0,15)+'…' : rootNode.label;
         ctx.fillText(rl, W/2, H/2 + pr + 13);
         // Overlay text
-        ctx.font = '700 13px Inter, sans-serif'; ctx.fillStyle = '#059669'; ctx.textAlign = 'center';
+        ctx.font = "700 13px 'Space Grotesk', sans-serif"; ctx.fillStyle = '#10b981'; ctx.textAlign = 'center';
         ctx.fillText('✓ Clean Connection Profile', W/2, H/2 + 70);
-        ctx.font = '500 9px Inter, sans-serif'; ctx.fillStyle = '#64748b';
+        ctx.font = "500 9px 'Space Grotesk', sans-serif"; ctx.fillStyle = '#8892aa';
         ctx.fillText('No third-party trackers detected on this page', W/2, H/2 + 86);
         return;
       }
@@ -1050,10 +1050,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const fn = _mapNodes.find(n => n.id === edge.from);
         const tn = _mapNodes.find(n => n.id === edge.to);
         if (!fn || !tn) return;
-        const catEdgeColors = { analytics: 'rgba(217,119,6,0.3)', advertising: 'rgba(234,88,12,0.3)', tracking: 'rgba(124,58,237,0.3)', cdn: 'rgba(8,145,178,0.25)', other: 'rgba(100,116,132,0.2)' };
+        const catEdgeColors = { analytics: 'rgba(251,191,36,0.18)', advertising: 'rgba(249,115,22,0.18)', tracking: 'rgba(168,85,247,0.18)', cdn: 'rgba(6,182,212,0.15)', other: 'rgba(148,163,184,0.12)' };
         ctx.beginPath(); ctx.moveTo(fn.x, fn.y); ctx.lineTo(tn.x, tn.y);
-        ctx.strokeStyle = catEdgeColors[edge.cat] || 'rgba(150,160,180,0.25)';
-        ctx.lineWidth = 1.2; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -(tick * 0.25); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = catEdgeColors[edge.cat] || 'rgba(150,160,180,0.15)';
+        ctx.lineWidth = 1.0; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -(tick * 0.2); ctx.stroke(); ctx.setLineDash([]);
       });
 
       // Draw particles
@@ -1063,47 +1063,44 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!fromNode || !toNode) return;
         const px = fromNode.x + (toNode.x - fromNode.x) * p.progress;
         const py = fromNode.y + (toNode.y - fromNode.y) * p.progress;
-        const catColors = { analytics: '#d97706', advertising: '#ea580c', tracking: '#7c3aed', other: '#64748b', cdn: '#0891b2' };
-        const color = catColors[p.cat] || '#64748b';
-        ctx.beginPath(); ctx.arc(px, py, 2.2, 0, 2 * Math.PI);
+        const catColors = { analytics: '#fbbf24', advertising: '#f97316', tracking: '#a855f7', other: '#94a3b8', cdn: '#06b6d4' };
+        const color = catColors[p.cat] || '#94a3b8';
+        ctx.beginPath(); ctx.arc(px, py, 2.0, 0, 2 * Math.PI);
         ctx.fillStyle = color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 3;
         ctx.fill();
-        ctx.shadowBlur = 0;
       });
 
       // Draw nodes
       _mapNodes.forEach(node => {
         const isRoot = node.id === 'root';
         node.pulse = (node.pulse + (isRoot ? 0.04 : 0.015)) % (2 * Math.PI);
-        const pm = isRoot ? 1 + 0.12 * Math.sin(node.pulse) : 1;
+        const pm = isRoot ? 1 + 0.08 * Math.sin(node.pulse) : 1;
         const r = node.r * pm;
 
-        const glow = ctx.createRadialGradient(node.x, node.y, r*0.3, node.x, node.y, r*2.8);
-        glow.addColorStop(0, node.color + (isRoot ? '55' : '28')); glow.addColorStop(1, 'transparent');
-        ctx.beginPath(); ctx.arc(node.x, node.y, r*2.8, 0, 2*Math.PI); ctx.fillStyle = glow; ctx.fill();
+        const glow = ctx.createRadialGradient(node.x, node.y, r*0.3, node.x, node.y, r*2.0);
+        glow.addColorStop(0, node.color + (isRoot ? '20' : '10')); glow.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(node.x, node.y, r*2.0, 0, 2*Math.PI); ctx.fillStyle = glow; ctx.fill();
 
         ctx.beginPath(); ctx.arc(node.x, node.y, r, 0, 2*Math.PI);
         const ng = ctx.createRadialGradient(node.x-r*0.3, node.y-r*0.3, r*0.1, node.x, node.y, r);
-        ng.addColorStop(0, lightenColor(node.color, 45)); ng.addColorStop(1, node.color);
+        ng.addColorStop(0, lightenColor(node.color, 30)); ng.addColorStop(1, node.color);
         ctx.fillStyle = ng; ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = isRoot ? 2.5 : 1.5; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = isRoot ? 2.0 : 1.2; ctx.stroke();
 
-        ctx.font = `${isRoot ? '700' : '500'} ${isRoot ? 9 : 8}px Inter, sans-serif`;
-        ctx.fillStyle = '#1e293b'; ctx.textAlign = 'center';
+        ctx.font = `${isRoot ? '700' : '500'} ${isRoot ? 9 : 8}px 'Space Grotesk', sans-serif`;
+        ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'center';
         const label = node.label.length > 15 ? node.label.substring(0, 14) + '…' : node.label;
         ctx.fillText(label, node.x, node.y + r + 12);
       });
 
       // Stat overlay (top-left corner)
-      ctx.fillStyle = 'rgba(15,23,42,0.62)';
+      ctx.fillStyle = 'rgba(24, 28, 48, 0.85)';
       ctx.beginPath();
       roundRect(ctx, 8, 8, 148, 34, 6);
       ctx.fill();
-      ctx.font = '600 10px Inter, sans-serif'; ctx.fillStyle = '#f8fafc'; ctx.textAlign = 'left';
+      ctx.font = "600 10px 'Space Grotesk', sans-serif"; ctx.fillStyle = '#f8fafc'; ctx.textAlign = 'left';
       ctx.fillText(`${totalConnections} reqs · ${totalDomains} domains`, 16, 22);
-      ctx.font = '500 8px Inter, sans-serif'; ctx.fillStyle = '#94a3b8';
+      ctx.font = "500 8px 'Space Grotesk', sans-serif"; ctx.fillStyle = '#8892aa';
       ctx.fillText('Third-party network activity', 16, 35);
     }
 
@@ -1205,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = val;
-        el.style.color = good ? '#10b981' : '#ef4444';
+        el.style.color = good ? 'var(--safe)' : 'var(--dangerous)';
       }
     };
     setSec('sec-https', trust.isHttps ? 'Yes' : 'No', trust.isHttps);
@@ -1220,9 +1217,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const setPerm = (id, val) => {
       const el = document.getElementById(id);
       if (el) {
-        if (val === 'granted') { el.textContent = 'Granted'; el.style.color = '#ef4444'; }
-        else if (val === 'prompt') { el.textContent = 'Prompt'; el.style.color = '#f59e0b'; }
-        else { el.textContent = 'Denied'; el.style.color = '#10b981'; }
+        if (val === 'granted') { el.textContent = 'Granted'; el.style.color = 'var(--dangerous)'; }
+        else if (val === 'prompt') { el.textContent = 'Prompt'; el.style.color = 'var(--suspicious)'; }
+        else { el.textContent = 'Denied'; el.style.color = 'var(--safe)'; }
       }
     };
     setPerm('perm-geo', perms.geolocation);
@@ -1318,10 +1315,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const cc = catColors[item.topCat] || '#6b7280';
       const cl = catLabels[item.topCat] || 'Other';
       const medalColor = idx === 0 ? '#dc2626' : idx === 1 ? '#d97706' : idx === 2 ? '#6b7280' : '#9ca3af';
-      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;' + (idx > 0 ? 'border-top:1px solid #f3f4f6;' : '') + '">' +
+      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;' + (idx > 0 ? 'border-top:1px solid rgba(255,255,255,0.04);' : '') + '">' +
         '<span style="width:18px;height:18px;border-radius:50%;background:' + medalColor + '20;color:' + medalColor + ';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;">' + (idx + 1) + '</span>' +
         '<div style="flex:1;"><div style="font-size:10px;font-weight:600;">' + escapeHtml(item.domain) + ' <span style="background:' + cc + '15;color:' + cc + ';padding:0 4px;border-radius:3px;font-size:8px;font-weight:600;">' + cl + '</span></div>' +
-        '<div style="font-size:8px;color:var(--text-sub);">' + item.totalReqs + ' reqs · ' + item.subdomains.length + ' subs · Score: ' + item.score + '</div></div></div>';
+        '<div style="font-size:8px;color:var(--text-secondary);">' + item.totalReqs + ' reqs · ' + item.subdomains.length + ' subs · Score: ' + item.score + '</div></div></div>';
     }).join('');
   }
 
@@ -1419,12 +1416,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggle) toggle.checked = enabled;
     if (statusEl) {
       statusEl.textContent = enabled ? 'Active' : 'Off';
-      statusEl.style.background = enabled ? '#dcfce7' : '#f1f5f9';
-      statusEl.style.color = enabled ? '#166534' : '#64748b';
+      statusEl.style.background = enabled ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)';
+      statusEl.style.color = enabled ? '#34d399' : 'var(--text-secondary)';
     }
     if (iconEl) {
-      iconEl.style.background = enabled ? 'var(--accent-bg)' : '#f1f5f9';
-      iconEl.style.color = enabled ? 'var(--accent)' : '#94a3b8';
+      iconEl.style.background = enabled ? 'var(--accent-bg)' : 'rgba(255, 255, 255, 0.05)';
+      iconEl.style.color = enabled ? 'var(--accent)' : 'var(--text-tertiary)';
     }
     if (countEl && stats) {
       countEl.textContent = stats.blockedThisPage || 0;
@@ -1458,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.session.get(['sitesentinel_history'], (result) => {
       const history = result.sitesentinel_history || [];
       if (history.length === 0) {
-        container.innerHTML = '<div class="card" style="text-align:center;padding:24px;"><div style="font-size:10px;color:var(--text-sub);">No scans yet. Click <strong>Scan Now</strong> to check a site.</div></div>';
+        container.innerHTML = '<div class="card" style="text-align:center;padding:24px;"><div style="font-size:10px;color:var(--text-secondary);">No scans yet. Click <strong>Scan Now</strong> to check a site.</div></div>';
         return;
       }
       container.innerHTML = history.map((item, idx) => {
@@ -1466,21 +1463,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const badgeColor = v === 'safe' ? '#10b981' : v === 'suspicious' ? '#f59e0b' : '#dc2626';
         const icon = v === 'safe' ? '&#10003;' : v === 'suspicious' ? '&#9888;' : '&#10007;';
         const flagHtml = (item.flags || []).slice(0, 3).map(f =>
-          '<span style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:8px;">' + escapeHtml(f) + '</span>'
+          '<span style="background:rgba(201, 162, 39, 0.06);color:#8892aa;padding:1px 6px;border-radius:4px;font-size:8px;border:1px solid rgba(201, 162, 39, 0.18);">' + escapeHtml(f) + '</span>'
         ).join('');
-        return '<div class="card" style="padding:10px;margin-bottom:6px;cursor:pointer;" data-idx="' + idx + '">' +
+        return '<div class="card" style="padding:10px;margin-bottom:6px;cursor:pointer;background:rgba(201, 162, 39, 0.03);border:1px solid rgba(201, 162, 39, 0.15);" data-idx="' + idx + '">' +
           '<div style="display:flex;align-items:center;gap:8px;">' +
           '<span style="width:24px;height:24px;border-radius:50%;background:' + badgeColor + '20;color:' + badgeColor + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">' + icon + '</span>' +
           '<div style="flex:1;min-width:0;">' +
           '<div style="font-size:10px;font-weight:600;">' + escapeHtml(item.domain || '') + '</div>' +
-          '<div style="font-size:8px;color:var(--text-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.url || '') + '</div>' +
+          '<div style="font-size:8px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.url || '') + '</div>' +
           '</div>' +
           '<div style="text-align:right;flex-shrink:0;">' +
           '<div style="font-size:10px;font-weight:700;color:' + badgeColor + ';">' + v.charAt(0).toUpperCase() + v.slice(1) + '</div>' +
-          '<div style="font-size:8px;color:var(--text-sub);">' + (item.dateStr || '') + '</div>' +
+          '<div style="font-size:8px;color:var(--text-secondary);">' + (item.dateStr || '') + '</div>' +
           '</div>' +
           '</div>' +
-          (flagHtml ? '<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">' + flagHtml + '</div>' : '') +
+          (flagHtml ? '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">' + flagHtml + '</div>' : '') +
           '</div>';
       }).join('');
     });

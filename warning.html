@@ -5,13 +5,13 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
     <title>Warning – Site Sentinel</title>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        font-family: 'Inter', -apple-system, sans-serif;
-        background: #0f0f11;
-        color: #f1f1f1;
+        font-family: 'Space Grotesk', -apple-system, sans-serif;
+        background: #0c0e1a;
+        color: #f1f5f9;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -24,31 +24,39 @@
         text-align: center;
       }
 
+      @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+      }
+
       .shield-icon {
         width: 64px;
         height: 64px;
         margin: 0 auto 20px;
-        background: rgba(220,38,38,0.12);
+        background: rgba(239, 68, 68, 0.12);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #ef4444;
+        animation: pulse-red 2s infinite;
       }
       .shield-icon svg { width: 32px; height: 32px; }
 
       .risk-badge {
         display: inline-block;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        padding: 4px 12px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        padding: 4px 14px;
         border-radius: 20px;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        text-transform: uppercase;
       }
-      .risk-badge.high { background: rgba(220,38,38,0.15); color: #ef4444; }
-      .risk-badge.medium { background: rgba(217,119,6,0.15); color: #f59e0b; }
-      .risk-badge.low { background: rgba(37,99,235,0.15); color: #60a5fa; }
+      .risk-badge.high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+      .risk-badge.medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+      .risk-badge.low { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
 
       h1 {
         font-size: 26px;
@@ -59,7 +67,7 @@
       }
 
       #warning-domain {
-        color: #fbbf24;
+        color: #c9a227;
       }
 
       .subtitle {
@@ -70,8 +78,8 @@
       }
 
       .reason-card {
-        background: #18181b;
-        border: 1px solid #27272a;
+        background: #13162a;
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 12px;
         padding: 16px;
         margin-bottom: 24px;
@@ -96,7 +104,7 @@
         word-break: break-all;
         margin-top: 8px;
         padding-top: 8px;
-        border-top: 1px solid #27272a;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .actions {
@@ -107,27 +115,31 @@
 
       .btn-primary {
         width: 100%;
-        background: #18181b;
-        color: #fff;
-        border: 1px solid #3f3f46;
+        background: #181c30;
+        color: #f1f5f9;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 10px;
         padding: 14px;
         font-size: 13px;
         font-weight: 600;
+        font-family: 'Space Grotesk', sans-serif;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        transition: background 0.2s;
+        transition: background 0.18s ease, transform 0.18s ease;
       }
-      .btn-primary:hover { background: #27272a; }
+      .btn-primary:hover {
+        background: #1e2440;
+        transform: translateY(-1px);
+      }
 
       .btn-danger {
         width: 100%;
         background: transparent;
-        color: #ef4444;
-        border: 1px solid rgba(239,68,68,0.3);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.25);
         border-radius: 10px;
         padding: 14px;
         font-size: 13px;
@@ -137,9 +149,12 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        transition: background 0.2s;
+        transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
       }
-      .btn-danger:hover { background: rgba(239,68,68,0.1); }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.08);
+        transform: translateY(-1px);
+      }
 
       .checkbox-row {
         display: flex;
@@ -151,7 +166,7 @@
         color: #9ca3af;
       }
       .checkbox-row input[type="checkbox"] {
-        accent-color: #2563eb;
+        accent-color: #c9a227;
         width: 16px;
         height: 16px;
         cursor: pointer;
