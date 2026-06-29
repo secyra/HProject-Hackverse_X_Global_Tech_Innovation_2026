@@ -1277,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urls.length > 0) {
       html += '<div style="margin-top:6px;max-height:250px;overflow-y:auto;">';
       urls.forEach(u => {
-        html += '<div style="font-size:9px;padding:3px 0;word-break:break-all;color:var(--text-sub);border-bottom:1px solid #f8fafc;">' + escapeHtml(u) + '</div>';
+        html += '<div style="font-size:9px;padding:3px 0;word-break:break-all;color:var(--text-sub);border-bottom:1px solid var(--border);">' + escapeHtml(u) + '</div>';
       });
       html += '</div>';
     }

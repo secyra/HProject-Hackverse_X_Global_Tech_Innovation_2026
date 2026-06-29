@@ -4,7 +4,11 @@
   "version": "2.2",
   "description": "Analyzes website privacy, behavior, and phishing risks with live telemetry, external link scanning, and data collection tracking.",
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": "logo.png"
+  },
+  "icons": {
+    "128": "logo.png"
   },
   "background": {
     "scripts": ["shield-domains.js", "background.js"]
