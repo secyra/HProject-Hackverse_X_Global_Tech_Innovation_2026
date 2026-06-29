@@ -56,7 +56,7 @@ async def scrape_url(target_url: str) -> dict:
 
         # Detect credential form: has password field or login/checkout submit button
         btn = form.find(['button', 'input'], attrs={'type': ['submit', None]})
-        btn_text = (btn.get('value', '') or btn.get_text(strip=True) or '').lower()
+        btn_text = (btn.get('value', '') or btn.get_text(strip=True) or '').lower() if btn else ''
         if has_password or any(kw in btn_text for kw in ['sign in', 'log in', 'sign up', 'register', 'create account', 'pay now', 'checkout']):
             credential_form_found = True
             if not str(resp.url).startswith('https://'):

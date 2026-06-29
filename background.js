@@ -1,4 +1,37 @@
-const tabTelemetry = {};
+importScripts('shield-domains.js');
+
+let tabTelemetry = {};
+let _telemetrySaveTimer = null;
+
+// Load persisted telemetry on service worker start
+chrome.storage.session.get('tabTelemetry', (result) => {
+  if (result.tabTelemetry) {
+    // Merge instead of replace to avoid races with in-flight webRequest writes
+    Object.entries(result.tabTelemetry).forEach(([tabId, saved]) => {
+      if (!tabTelemetry[tabId]) {
+        saved.thirdPartyDomains = new Set(saved.thirdPartyDomains || []);
+        tabTelemetry[tabId] = saved;
+      }
+    });
+  }
+});
+
+function flushTelemetryToStorage() {
+  // Serialize Sets to Arrays for JSON storage
+  const toSave = {};
+  Object.entries(tabTelemetry).forEach(([tabId, t]) => {
+    toSave[tabId] = {
+      ...t,
+      thirdPartyDomains: Array.from(t.thirdPartyDomains || [])
+    };
+  });
+  chrome.storage.session.set({ tabTelemetry: toSave });
+}
+
+function scheduleTelemetrySave() {
+  if (_telemetrySaveTimer) clearTimeout(_telemetrySaveTimer);
+  _telemetrySaveTimer = setTimeout(flushTelemetryToStorage, 1000);
+}
 
 const SHIELD_RULE_PRIORITY = 1;
 const SHIELD_RULE_ID_OFFSET = 1000;
@@ -309,6 +342,7 @@ if (chrome.declarativeNetRequest && chrome.declarativeNetRequest.onRuleMatchedDe
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete tabTelemetry[tabId];
   deleteBlockedCount(tabId);
+  scheduleTelemetrySave();
 });
 
 // Reset telemetry and check URL when navigation starts
@@ -322,6 +356,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       analyticsScripts: 0,
       adScripts: 0
     };
+    scheduleTelemetrySave();
     resetBlockedCount(tabId);
 
     if (tab.url && !tab.url.startsWith('chrome-extension://')) {
@@ -345,6 +380,7 @@ function initTabTelemetry(tabId) {
       analyticsScripts: 0,
       adScripts: 0
     };
+    scheduleTelemetrySave();
   }
 }
 
@@ -392,6 +428,7 @@ chrome.webRequest.onBeforeRequest.addListener(
           }
           telem.domainCategories[dom].count++;
           telem.domainCategories[dom].categories[category] = (telem.domainCategories[dom].categories[category] || 0) + 1;
+          scheduleTelemetrySave();
         }
       } catch (e) {}
     }
@@ -423,6 +460,12 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'get_network_telemetry') {
+    // Flush to storage immediately so popup gets persisted data
+    if (_telemetrySaveTimer) {
+      clearTimeout(_telemetrySaveTimer);
+      _telemetrySaveTimer = null;
+    }
+    flushTelemetryToStorage();
     const tabId = msg.tabId;
     const telem = tabTelemetry[tabId] || {
       thirdPartyRequests: 0,

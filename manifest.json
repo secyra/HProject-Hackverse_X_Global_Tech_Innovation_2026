@@ -11,7 +11,7 @@
     "128": "logo.png"
   },
   "background": {
-    "scripts": ["shield-domains.js", "background.js"]
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
