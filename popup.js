@@ -43,15 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Rescan button
   document.getElementById('btn-rescan').addEventListener('click', startUnifiedScan);
 
-  // Cancel Scan button
-  const cancelScanBtn = document.getElementById('btn-cancel-scan');
-  if (cancelScanBtn) {
-    cancelScanBtn.addEventListener('click', () => {
-      const overlay = document.getElementById('scan-loading-overlay');
-      if (overlay) overlay.classList.add('hidden');
-    });
-  }
-
   // Wire up collapsible evidence sections
   document.querySelectorAll('.evidence-header').forEach(header => {
     header.addEventListener('click', () => {
